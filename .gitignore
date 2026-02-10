@@ -1,0 +1,41 @@
+# Data (too large for git)
+data/*.csv
+data/*.zip
+
+# LaTeX build files
+report/*.aux
+report/*.bbl
+report/*.blg
+report/*.log
+report/*.out
+report/*.toc
+report/*.lof
+report/*.lot
+report/*.fls
+report/*.fdb_latexmk
+report/*.synctex.gz
+report/chapters/*.aux
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Results (optional: remove this line if you want to track results)
+# results/logs/*.log
