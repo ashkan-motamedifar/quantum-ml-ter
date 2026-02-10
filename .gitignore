@@ -1,25 +1,34 @@
-# Data (too large for git)
+# ==================================================
+# Data (too large / external)
+# ==================================================
 data/*.csv
 data/*.zip
 
-# LaTeX build files
-report/*.aux
-report/*.bbl
-report/*.blg
-report/*.log
-report/*.out
-report/*.toc
-report/*.lof
-report/*.lot
-report/*.fls
-report/*.fdb_latexmk
-report/*.synctex.gz
-report/chapters/*.aux
+# ==================================================
+# LaTeX build artifacts (ignore everywhere)
+# ==================================================
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.lof
+*.lot
 
+# Compiled PDF (final report)
+report/main.pdf
+
+# ==================================================
 # Python
+# ==================================================
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
 .ipynb_checkpoints/
 *.egg-info/
 dist/
@@ -27,15 +36,21 @@ build/
 .venv/
 venv/
 
-# IDE
+# ==================================================
+# IDE / Editor
+# ==================================================
 .vscode/
 .idea/
 *.swp
 *.swo
 
+# ==================================================
 # OS
+# ==================================================
 .DS_Store
 Thumbs.db
 
-# Results (optional: remove this line if you want to track results)
-# results/logs/*.log
+# ==================================================
+# Results (logs only, figures can be tracked)
+# ==================================================
+results/logs/*.log
