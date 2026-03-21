@@ -71,8 +71,8 @@ for cls in y.unique():
         idx = idx[:min_size]
     dfs.append(pd.concat([X.loc[idx], y.loc[idx]], axis=1))
 df_balanced = pd.concat(dfs, ignore_index=True).sample(frac=1, random_state=42)
-X_bal = df_balanced[top_features]
-y_bal = df_balanced['type']
+X_bal = df_balanced[top_features].reset_index(drop=True)
+y_bal = df_balanced['type'].reset_index(drop=True)
 print(f"Balanced: {df_balanced.shape}\n{y_bal.value_counts()}")
 
 # Normalize to [0, pi] for angle encoding

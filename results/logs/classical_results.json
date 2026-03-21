@@ -1,0 +1,46 @@
+{
+  "standard": [
+    {
+      "model": "SVM",
+      "accuracy": 0.99,
+      "f1": 0.9900011307100859
+    },
+    {
+      "model": "Random Forest",
+      "accuracy": 0.99,
+      "f1": 0.9900011307100859
+    },
+    {
+      "model": "NN-Small (~36 params, matches Re-uploading)",
+      "accuracy": 0.955,
+      "f1": 0.9548209107965206
+    },
+    {
+      "model": "NN-Medium (~51 params, matches QCNN)",
+      "accuracy": 0.99,
+      "f1": 0.99
+    }
+  ],
+  "zeroday": [
+    {
+      "model": "SVM (zero-day)",
+      "accuracy": 0.016634440400363968,
+      "f1": 0.032724526613151346
+    },
+    {
+      "model": "Random Forest (zero-day)",
+      "accuracy": 0.003042538671519563,
+      "f1": 0.006066619418851878
+    },
+    {
+      "model": "NN-Small (zero-day)",
+      "accuracy": 0.00696656050955414,
+      "f1": 0.01383672662581538
+    },
+    {
+      "model": "NN-Medium (zero-day)",
+      "accuracy": 0.02343039126478617,
+      "f1": 0.04578795287841743
+    }
+  ]
+}
