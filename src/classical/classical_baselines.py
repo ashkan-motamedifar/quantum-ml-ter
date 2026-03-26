@@ -5,8 +5,8 @@ TER: Quantum Computing for Machine Learning — IoT Intrusion Detection
 Models:
     - SVM (RBF kernel, grid-searched)
     - Random Forest
-    - Neural Network Small  (~36 params, matches data re-uploading)
-    - Neural Network Medium (~51 params, matches QCNN)
+    - Neural Network Small  (~207 params, matches QCNN)
+    - Neural Network Medium (~307 params, matches data re-uploading)
 
 Two evaluation modes:
     - Standard   : 3-class (normal / dos / injection)
@@ -164,14 +164,14 @@ def run_standard():
     metrics, _ = train_nn(
         X_tr, y_tr, X_te, y_te,
         hidden_layers=(16, 8),
-        name="NN-Small (~36 params, matches Re-uploading)"
+        name="NN-Medium (~307 params, matches Re-uploading)"
     )
     results.append(metrics)
 
     metrics, _ = train_nn(
         X_tr, y_tr, X_te, y_te,
         hidden_layers=(12, 6),
-        name="NN-Medium (~51 params, matches QCNN)"
+        name="NN-Small (~207 params, matches QCNN)"
     )
     results.append(metrics)
 
@@ -200,14 +200,14 @@ def run_zeroday():
     metrics, _ = train_nn(
         X_tr, y_tr, X_te, y_te,
         hidden_layers=(16, 8),
-        name="NN-Small (zero-day)"
+        name="NN-Medium (zero-day)"
     )
     results.append(metrics)
 
     metrics, _ = train_nn(
         X_tr, y_tr, X_te, y_te,
         hidden_layers=(12, 6),
-        name="NN-Medium (zero-day)"
+        name="NN-Small (zero-day)"
     )
     results.append(metrics)
 
