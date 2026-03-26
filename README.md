@@ -1,57 +1,85 @@
-# Quantum Computing for Machine Learning
+# Quantum ML for IoT Intrusion Detection
 
-**TER 2025–2026 — University of Strasbourg (ICube, UMR CNRS 7357)**
+> Can quantum circuits detect network attacks that classical models have never seen?
+> This project tries to find out.
 
-Supervisor: Fabrice Théoleyre ([fabrice.theoleyre@cnrs.fr](mailto:fabrice.theoleyre@cnrs.fr))
+**TER 2025–2026 — University of Strasbourg / ICube (UMR CNRS 7357)**
+Supervisor: [Fabrice Théoleyre](mailto:fabrice.theoleyre@cnrs.fr)
 
-## Overview
+---
 
-This project explores the application of quantum computing to machine learning, specifically for network traffic classification and zero-day attack detection. We implement and compare classical and quantum classifiers on a real-world IoT network dataset using PennyLane.
+## What this is
 
-## Project Structure
+A head-to-head comparison of classical and quantum machine learning on a real-world IoT network dataset — 1 million flows, 3 traffic classes, and a zero-day detection scenario where the model is tested on attack types it has never seen during training.
 
-```
-quantum-ml-ter/
-├── report/                  # LaTeX report (TER memoir)
-│   ├── main.tex             # Main document
-│   ├── chapters/            # Individual chapters
-│   ├── figures/             # Report figures
-│   └── references.bib       # Bibliography
-├── src/                     # Source code
-│   ├── preprocessing/       # Data cleaning, rebalancing
-│   ├── classical/           # Classical ML baselines (NN, SVM)
-│   ├── quantum/             # Quantum classifiers (PennyLane)
-│   └── evaluation/          # Metrics, comparison, zero-day
-├── data/                    # Datasets (not tracked by git)
-├── results/                 # Experiment outputs
-│   ├── figures/             # Generated plots
-│   └── logs/                # Training logs
-└── notebooks/               # Jupyter notebooks for exploration
-```
+Two quantum architectures are implemented from scratch using PennyLane:
+- **QCNN** — Quantum Convolutional Neural Network (Hur et al., 2022)
+- **Data Re-uploading** — universal single/multi-qubit classifier (Pérez-Salinas et al., 2020)
+
+Both are benchmarked against SVM, Random Forest, and two neural networks under identical conditions.
+
+---
 
 ## Dataset
 
-**Network_dataset_11**: 1,000,000 IoT network flow records with 3 classes:
-- Normal traffic (3.5%)
-- DoS attacks (84.0%)
-- Injection attacks (12.5%)
+`Network_dataset_11` from the ToN_IoT benchmark (UNSW Canberra):
 
-## Quantum Architectures
+| Class | Samples | Share |
+|---|---|---|
+| DoS attacks | 839,637 | 84.0% |
+| Injection attacks | 125,195 | 12.5% |
+| Normal traffic | 35,168 | 3.5% |
 
-- **Data Re-uploading** (Pérez-Salinas et al., 2020)
-- **Quantum CNN** (Hur et al., 2022)
+**Zero-day setup:** train on normal + DoS, evaluate on injection — which the model has never seen.
 
-## Requirements
+---
 
-```bash
-pip install -r requirements.txt
+## Structure
+
+```
+├── src/
+│   ├── preprocessing/      feature selection, normalization, balanced splits
+│   ├── classical/          SVM, Random Forest, NN-Small, NN-Medium
+│   └── quantum/            QCNN and data re-uploading (PennyLane)
+├── notebooks/              step-by-step experiments
+├── results/
+│   ├── figures/            generated plots
+│   └── logs/               metrics as JSON
+├── report/                 full LaTeX manuscript
+└── data/                   raw + preprocessed CSVs (not tracked)
 ```
 
-## Building the Report
+---
+
+## Quickstart
 
 ```bash
-cd report
-pdflatex main.tex
-bibtex main
-pdflatex main.tex
-pdflatex main.tex
+# 1. Set up environment
+python3.11 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+
+# 2. Run preprocessing (generates all CSV splits)
+python src/preprocessing/preprocess.py
+
+# 3. Classical baselines
+python src/classical/classical_baselines.py
+
+# 4. Build the report
+cd report && pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
+```
+
+---
+
+## Status
+
+| Component | Status |
+|---|---|
+| Preprocessing pipeline | done |
+| Classical baselines | done |
+| QCNN | in progress |
+| Data Re-uploading | in progress |
+| Results & report | in progress |
+
+---
+
+**Ashkan Motamedifar** — [montamedifar.ashkan@etu.unistra.fr](mailto:montamedifar.ashkan@etu.unistra.fr)
