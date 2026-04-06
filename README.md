@@ -18,6 +18,8 @@ Two quantum architectures are implemented from scratch using PennyLane:
 
 Both are benchmarked against SVM, Random Forest, and two neural networks under identical conditions.
 
+**Key finding:** Classical models reach 99% on standard classification, but the QCNN detects 87.5% of unseen attack types in zero-day detection — while every classical model fails below 3%.
+
 ---
 
 ## Dataset
@@ -64,7 +66,11 @@ python src/preprocessing/preprocess.py
 # 3. Classical baselines
 python src/classical/classical_baselines.py
 
-# 4. Build the report
+# 4. Quantum classifiers
+python -m src.quantum.qcnn
+python -m src.quantum.data_reuploading
+
+# 5. Build the report
 cd report && pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
 ```
 
@@ -76,9 +82,10 @@ cd report && pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex m
 |---|---|
 | Preprocessing pipeline | done |
 | Classical baselines | done |
-| QCNN | in progress |
-| Data Re-uploading | in progress |
-| Results & report | in progress |
+| QCNN | done |
+| Data Re-uploading | done |
+| Results chapter | done |
+| Conclusion | next week |
 
 ---
 
