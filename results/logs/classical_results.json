@@ -11,12 +11,12 @@
       "f1": 0.9900011307100859
     },
     {
-      "model": "NN-Small (~36 params, matches Re-uploading)",
+      "model": "NN-Medium (~307 params, matches Re-uploading)",
       "accuracy": 0.955,
       "f1": 0.9548209107965206
     },
     {
-      "model": "NN-Medium (~51 params, matches QCNN)",
+      "model": "NN-Small (~207 params, matches QCNN)",
       "accuracy": 0.99,
       "f1": 0.99
     }
@@ -33,12 +33,12 @@
       "f1": 0.006066619418851878
     },
     {
-      "model": "NN-Small (zero-day)",
+      "model": "NN-Medium (zero-day)",
       "accuracy": 0.00696656050955414,
       "f1": 0.01383672662581538
     },
     {
-      "model": "NN-Medium (zero-day)",
+      "model": "NN-Small (zero-day)",
       "accuracy": 0.02343039126478617,
       "f1": 0.04578795287841743
     }
