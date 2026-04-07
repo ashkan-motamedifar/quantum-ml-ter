@@ -1,0 +1,40 @@
+[
+  {
+    "dataset": "make_circles",
+    "n_layers": 4,
+    "n_params": 24,
+    "n_epochs": 80,
+    "accuracy": 0.99,
+    "f1": 0.98989898989899,
+    "mcc": 0.9801960588196069,
+    "confusion_matrix": [
+      [
+        50,
+        0
+      ],
+      [
+        1,
+        49
+      ]
+    ]
+  },
+  {
+    "dataset": "make_moons",
+    "n_layers": 4,
+    "n_params": 24,
+    "n_epochs": 80,
+    "accuracy": 1.0,
+    "f1": 1.0,
+    "mcc": 1.0,
+    "confusion_matrix": [
+      [
+        50,
+        0
+      ],
+      [
+        0,
+        50
+      ]
+    ]
+  }
+]

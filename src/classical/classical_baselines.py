@@ -22,7 +22,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import (
-    accuracy_score, f1_score, classification_report, confusion_matrix
+    accuracy_score, f1_score, classification_report,
+    confusion_matrix, matthews_corrcoef
 )
 from sklearn.preprocessing import LabelEncoder
 
@@ -136,12 +137,34 @@ def train_nn(X_train, y_train, X_test, y_test, hidden_layers, name="NN"):
 def _report(y_true, y_pred, name):
     acc = accuracy_score(y_true, y_pred)
     f1  = f1_score(y_true, y_pred, average='weighted', zero_division=0)
+    mcc = matthews_corrcoef(y_true, y_pred)
+    cm  = confusion_matrix(y_true, y_pred)
 
     print(f"  Test accuracy : {acc:.4f}")
     print(f"  Weighted F1   : {f1:.4f}")
+    print(f"  MCC           : {mcc:.4f}")
+    print(f"  Confusion matrix:\n{cm}")
     print(classification_report(y_true, y_pred, zero_division=0))
 
-    return {'model': name, 'accuracy': acc, 'f1': f1}
+    report = classification_report(y_true, y_pred, zero_division=0, output_dict=True)
+
+    return {
+        'model': name,
+        'accuracy': float(acc),
+        'f1': float(f1),
+        'mcc': float(mcc),
+        'confusion_matrix': cm.tolist(),
+        'per_class': {
+            str(k): {
+                'precision': float(v['precision']),
+                'recall': float(v['recall']),
+                'f1': float(v['f1-score']),
+                'support': int(v['support']),
+            }
+            for k, v in report.items()
+            if k not in ('accuracy', 'macro avg', 'weighted avg')
+        },
+    }
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────

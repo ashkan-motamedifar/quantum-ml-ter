@@ -16,7 +16,10 @@ from pennylane import numpy as np
 import pandas as pd
 import json
 from pathlib import Path
-from sklearn.metrics import accuracy_score, f1_score, classification_report
+from sklearn.metrics import (
+    accuracy_score, f1_score, classification_report,
+    confusion_matrix, matthews_corrcoef
+)
 
 ROOT    = Path(__file__).resolve().parents[2]
 DATA    = ROOT / 'data'
@@ -207,9 +210,31 @@ def _evaluate(model, X_test, y_test, name):
     y_pred = np.array([str(v) for v in y_pred])
     acc = accuracy_score(y_true, y_pred)
     f1  = f1_score(y_true, y_pred, average='weighted', zero_division=0)
-    print(f"\n  {name} — Test Accuracy: {acc:.4f} | F1: {f1:.4f}")
+    mcc = matthews_corrcoef(y_true, y_pred)
+    cm  = confusion_matrix(y_true, y_pred)
+    print(f"\n  {name} — Acc: {acc:.4f} | F1: {f1:.4f} | MCC: {mcc:.4f}")
+    print(f"  Confusion matrix:\n{cm}")
     print(classification_report(y_true, y_pred, zero_division=0))
-    return {'model': name, 'accuracy': float(acc), 'f1': float(f1)}
+
+    report = classification_report(y_true, y_pred, zero_division=0, output_dict=True)
+
+    return {
+        'model': name,
+        'accuracy': float(acc),
+        'f1': float(f1),
+        'mcc': float(mcc),
+        'confusion_matrix': cm.tolist(),
+        'per_class': {
+            str(k): {
+                'precision': float(v['precision']),
+                'recall': float(v['recall']),
+                'f1': float(v['f1-score']),
+                'support': int(v['support']),
+            }
+            for k, v in report.items()
+            if k not in ('accuracy', 'macro avg', 'weighted avg')
+        },
+    }
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
