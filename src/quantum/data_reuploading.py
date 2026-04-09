@@ -252,7 +252,7 @@ if __name__ == '__main__':
     model_1q = ReuploadingClassifier(
         n_features=n_feat, n_layers=6, n_qubits=1, lr=0.01
     )
-    h1 = model_1q.fit(X_tr, y_tr, n_epochs=30)
+    h1 = model_1q.fit(X_tr, y_tr, n_epochs=100)
     results['single_qubit_standard'] = _evaluate(model_1q, X_te, y_te, "Re-uploading 1q (standard)")
     results['single_qubit_standard']['history'] = h1
 
@@ -263,7 +263,7 @@ if __name__ == '__main__':
     model_4q = ReuploadingClassifier(
         n_features=n_feat, n_layers=3, n_qubits=4, lr=0.01
     )
-    h4 = model_4q.fit(X_tr, y_tr, n_epochs=30)
+    h4 = model_4q.fit(X_tr, y_tr, n_epochs=100)
     results['multi_qubit_standard'] = _evaluate(model_4q, X_te, y_te, "Re-uploading 4q (standard)")
     results['multi_qubit_standard']['history'] = h4
 
@@ -276,7 +276,7 @@ if __name__ == '__main__':
     model_1q_zd = ReuploadingClassifier(
         n_features=n_feat, n_layers=6, n_qubits=1, lr=0.01
     )
-    h1z = model_1q_zd.fit(X_tr_zd, y_tr_zd, n_epochs=30)
+    h1z = model_1q_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100)
     results['single_qubit_zeroday'] = _evaluate(model_1q_zd, X_te_zd, y_te_zd, "Re-uploading 1q (zero-day)")
     results['single_qubit_zeroday']['history'] = h1z
 
@@ -286,7 +286,7 @@ if __name__ == '__main__':
     model_4q_zd = ReuploadingClassifier(
         n_features=n_feat, n_layers=3, n_qubits=4, lr=0.01
     )
-    h4z = model_4q_zd.fit(X_tr_zd, y_tr_zd, n_epochs=30)
+    h4z = model_4q_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100)
     results['multi_qubit_zeroday'] = _evaluate(model_4q_zd, X_te_zd, y_te_zd, "Re-uploading 4q (zero-day)")
     results['multi_qubit_zeroday']['history'] = h4z
 

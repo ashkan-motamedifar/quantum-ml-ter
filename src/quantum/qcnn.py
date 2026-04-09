@@ -244,7 +244,7 @@ if __name__ == '__main__':
     X_tr, y_tr, X_te, y_te = load_standard()
 
     model = QCNNClassifier(n_qubits=8, lr=0.01)
-    history = model.fit(X_tr, y_tr, n_epochs=30)
+    history = model.fit(X_tr, y_tr, n_epochs=100)
     results['standard'] = _evaluate(model, X_te, y_te, "QCNN (standard)")
     results['standard']['history'] = history
 
@@ -255,7 +255,7 @@ if __name__ == '__main__':
     X_tr_zd, y_tr_zd, X_te_zd, y_te_zd = load_zeroday()
 
     model_zd = QCNNClassifier(n_qubits=8, lr=0.01)
-    history_zd = model_zd.fit(X_tr_zd, y_tr_zd, n_epochs=30)
+    history_zd = model_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100)
     results['zeroday'] = _evaluate(model_zd, X_te_zd, y_te_zd, "QCNN (zero-day)")
     results['zeroday']['history'] = history_zd
 
