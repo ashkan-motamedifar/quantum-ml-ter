@@ -10,6 +10,7 @@ Usage:
     python -m src.quantum.qcnn
 """
 
+import argparse
 import pennylane as qml
 from pennylane import numpy as np
 import pandas as pd
@@ -123,22 +124,30 @@ class QCNNClassifier:
         predictions = np.array([circuit(x, params) for x in X])
         return np.mean((y_binary - predictions) ** 2)
 
-    def fit(self, X, y, n_epochs=100, verbose=True):
+    def fit(self, X, y, n_epochs=100, batch_size=None, verbose=True):
         classes = np.unique(y)
         self._init_circuits(classes)
         opt = qml.AdamOptimizer(stepsize=self.lr)
         history = {'epoch': [], 'loss': []}
+        rng = np.random.default_rng(0)
 
         for epoch in range(n_epochs):
             total_loss = 0
 
+            # Mini-batch: use a random subset per epoch for speed
+            if batch_size and batch_size < len(X):
+                idx = rng.choice(len(X), size=batch_size, replace=False)
+                X_b, y_b = X[idx], y[idx]
+            else:
+                X_b, y_b = X, y
+
             for i, cls in enumerate(self.classes):
-                y_binary = np.where(y == cls, 1.0, -1.0)
+                y_binary = np.where(y_b == cls, 1.0, -1.0)
 
                 # Fix lambda closure: capture i by default arg
                 def cost_fn(p, _i=i):
                     return self._cost_fn(
-                        p, self.circuits[_i], X, y_binary
+                        p, self.circuits[_i], X_b, y_binary
                     )
 
                 self.params_list[i], loss = opt.step_and_cost(
@@ -172,23 +181,25 @@ class QCNNClassifier:
 
 # ── Data loading ─────────────────────────────────────────────────────────────
 
-def load_standard():
-    X_train = pd.read_csv(DATA / 'X_train_quantum.csv').values
-    y_train = pd.read_csv(DATA / 'y_train_quantum.csv').values.ravel()
+def load_standard(n_samples=500):
+    X_train = pd.read_csv(DATA / 'X_train.csv').values
+    y_train = pd.read_csv(DATA / 'y_train.csv').values.ravel()
     X_test  = pd.read_csv(DATA / 'X_test.csv').values[:200]
     y_test  = pd.read_csv(DATA / 'y_test.csv').values.ravel()[:200]
+    rng = np.random.default_rng(42)
+    idx_tr = rng.choice(len(X_train), size=n_samples, replace=False)
+    X_train, y_train = X_train[idx_tr], y_train[idx_tr]
     print(f"[Standard] Train: {X_train.shape} | Test: {X_test.shape}")
     return X_train, y_train, X_test, y_test
 
 
-def load_zeroday():
+def load_zeroday(n_samples=500):
     X_train = pd.read_csv(DATA / 'X_train_zeroday.csv').values
     y_train = pd.read_csv(DATA / 'y_train_zeroday.csv').values.ravel()
     X_test  = pd.read_csv(DATA / 'X_test_zeroday.csv').values
     y_test  = pd.read_csv(DATA / 'y_test_zeroday.csv').values.ravel()
-    # Subsample zeroday for quantum simulation
     rng = np.random.default_rng(42)
-    idx_tr = rng.choice(len(X_train), size=500, replace=False)
+    idx_tr = rng.choice(len(X_train), size=n_samples, replace=False)
     idx_te = rng.choice(len(X_test), size=200, replace=False)
     X_train, y_train = X_train[idx_tr], y_train[idx_tr]
     X_test, y_test   = X_test[idx_te], y_test[idx_te]
@@ -235,32 +246,39 @@ def _evaluate(model, X_test, y_test, name):
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--n_samples', type=int, default=500,
+                        help='Number of training samples (default: 500)')
+    args = parser.parse_args()
+    N = args.n_samples
+    BS = 100 if N > 500 else None  # mini-batch for large datasets
+
     results = {}
 
     # Standard 3-class
     print("=" * 60)
-    print("  QCNN — STANDARD EVALUATION")
+    print(f"  QCNN — STANDARD EVALUATION  (n_samples={N}, batch={BS})")
     print("=" * 60)
-    X_tr, y_tr, X_te, y_te = load_standard()
+    X_tr, y_tr, X_te, y_te = load_standard(n_samples=N)
 
     model = QCNNClassifier(n_qubits=8, lr=0.01)
-    history = model.fit(X_tr, y_tr, n_epochs=100)
+    history = model.fit(X_tr, y_tr, n_epochs=100, batch_size=BS)
     results['standard'] = _evaluate(model, X_te, y_te, "QCNN (standard)")
     results['standard']['history'] = history
 
     # Zero-day
     print("\n" + "=" * 60)
-    print("  QCNN — ZERO-DAY EVALUATION")
+    print(f"  QCNN — ZERO-DAY EVALUATION  (n_samples={N}, batch={BS})")
     print("=" * 60)
-    X_tr_zd, y_tr_zd, X_te_zd, y_te_zd = load_zeroday()
+    X_tr_zd, y_tr_zd, X_te_zd, y_te_zd = load_zeroday(n_samples=N)
 
     model_zd = QCNNClassifier(n_qubits=8, lr=0.01)
-    history_zd = model_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100)
+    history_zd = model_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100, batch_size=BS)
     results['zeroday'] = _evaluate(model_zd, X_te_zd, y_te_zd, "QCNN (zero-day)")
     results['zeroday']['history'] = history_zd
 
-    # Save
-    out = LOGS / 'qcnn_results.json'
+    # Save with sample size in filename
+    out = LOGS / f'qcnn_{N}s.json'
     with open(out, 'w') as f:
         json.dump(results, f, indent=2)
     print(f"\nResults saved → {out}")

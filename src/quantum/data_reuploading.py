@@ -11,6 +11,7 @@ Usage:
     python -m src.quantum.data_reuploading
 """
 
+import argparse
 import pennylane as qml
 from pennylane import numpy as np
 import pandas as pd
@@ -131,22 +132,30 @@ class ReuploadingClassifier:
         predictions = np.array([circuit(x, params) for x in X])
         return np.mean((y_binary - predictions) ** 2)
 
-    def fit(self, X, y, n_epochs=100, verbose=True):
+    def fit(self, X, y, n_epochs=100, batch_size=None, verbose=True):
         classes = np.unique(y)
         self._init_circuits(classes)
         opt = qml.AdamOptimizer(stepsize=self.lr)
         history = {'epoch': [], 'loss': []}
+        rng = np.random.default_rng(0)
 
         for epoch in range(n_epochs):
             total_loss = 0
 
+            # Mini-batch: use a random subset per epoch for speed
+            if batch_size and batch_size < len(X):
+                idx = rng.choice(len(X), size=batch_size, replace=False)
+                X_b, y_b = X[idx], y[idx]
+            else:
+                X_b, y_b = X, y
+
             for i, cls in enumerate(self.classes):
-                y_binary = np.where(y == cls, 1.0, -1.0)
+                y_binary = np.where(y_b == cls, 1.0, -1.0)
 
                 # Fix lambda closure
                 def cost_fn(p, _i=i):
                     return self._cost_fn(
-                        p, self.circuits[_i], X, y_binary
+                        p, self.circuits[_i], X_b, y_binary
                     )
 
                 self.params_list[i], loss = opt.step_and_cost(
@@ -180,22 +189,25 @@ class ReuploadingClassifier:
 
 # ── Data loading ─────────────────────────────────────────────────────────────
 
-def load_standard():
-    X_train = pd.read_csv(DATA / 'X_train_quantum.csv').values
-    y_train = pd.read_csv(DATA / 'y_train_quantum.csv').values.ravel()
+def load_standard(n_samples=500):
+    X_train = pd.read_csv(DATA / 'X_train.csv').values
+    y_train = pd.read_csv(DATA / 'y_train.csv').values.ravel()
     X_test  = pd.read_csv(DATA / 'X_test.csv').values[:200]
     y_test  = pd.read_csv(DATA / 'y_test.csv').values.ravel()[:200]
+    rng = np.random.default_rng(42)
+    idx_tr = rng.choice(len(X_train), size=n_samples, replace=False)
+    X_train, y_train = X_train[idx_tr], y_train[idx_tr]
     print(f"[Standard] Train: {X_train.shape} | Test: {X_test.shape}")
     return X_train, y_train, X_test, y_test
 
 
-def load_zeroday():
+def load_zeroday(n_samples=500):
     X_train = pd.read_csv(DATA / 'X_train_zeroday.csv').values
     y_train = pd.read_csv(DATA / 'y_train_zeroday.csv').values.ravel()
     X_test  = pd.read_csv(DATA / 'X_test_zeroday.csv').values
     y_test  = pd.read_csv(DATA / 'y_test_zeroday.csv').values.ravel()
     rng = np.random.default_rng(42)
-    idx_tr = rng.choice(len(X_train), size=500, replace=False)
+    idx_tr = rng.choice(len(X_train), size=n_samples, replace=False)
     idx_te = rng.choice(len(X_test), size=200, replace=False)
     X_train, y_train = X_train[idx_tr], y_train[idx_tr]
     X_test, y_test   = X_test[idx_te], y_test[idx_te]
@@ -240,58 +252,65 @@ def _evaluate(model, X_test, y_test, name):
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--n_samples', type=int, default=500,
+                        help='Number of training samples (default: 500)')
+    args = parser.parse_args()
+    N = args.n_samples
+    BS = 100 if N > 500 else None  # mini-batch for large datasets
+
     results = {}
 
-    X_tr, y_tr, X_te, y_te = load_standard()
+    X_tr, y_tr, X_te, y_te = load_standard(n_samples=N)
     n_feat = X_tr.shape[1]
 
     # --- Single-qubit (6 layers) ---
     print("=" * 60)
-    print("  SINGLE-QUBIT RE-UPLOADING — STANDARD")
+    print(f"  SINGLE-QUBIT RE-UPLOADING — STANDARD  (n_samples={N}, batch={BS})")
     print("=" * 60)
     model_1q = ReuploadingClassifier(
         n_features=n_feat, n_layers=6, n_qubits=1, lr=0.01
     )
-    h1 = model_1q.fit(X_tr, y_tr, n_epochs=100)
+    h1 = model_1q.fit(X_tr, y_tr, n_epochs=100, batch_size=BS)
     results['single_qubit_standard'] = _evaluate(model_1q, X_te, y_te, "Re-uploading 1q (standard)")
     results['single_qubit_standard']['history'] = h1
 
     # --- Multi-qubit (4 qubits, 3 layers) ---
     print("\n" + "=" * 60)
-    print("  4-QUBIT RE-UPLOADING — STANDARD")
+    print(f"  4-QUBIT RE-UPLOADING — STANDARD  (n_samples={N}, batch={BS})")
     print("=" * 60)
     model_4q = ReuploadingClassifier(
         n_features=n_feat, n_layers=3, n_qubits=4, lr=0.01
     )
-    h4 = model_4q.fit(X_tr, y_tr, n_epochs=100)
+    h4 = model_4q.fit(X_tr, y_tr, n_epochs=100, batch_size=BS)
     results['multi_qubit_standard'] = _evaluate(model_4q, X_te, y_te, "Re-uploading 4q (standard)")
     results['multi_qubit_standard']['history'] = h4
 
     # --- Zero-day ---
-    X_tr_zd, y_tr_zd, X_te_zd, y_te_zd = load_zeroday()
+    X_tr_zd, y_tr_zd, X_te_zd, y_te_zd = load_zeroday(n_samples=N)
 
     print("\n" + "=" * 60)
-    print("  SINGLE-QUBIT RE-UPLOADING — ZERO-DAY")
+    print(f"  SINGLE-QUBIT RE-UPLOADING — ZERO-DAY  (n_samples={N}, batch={BS})")
     print("=" * 60)
     model_1q_zd = ReuploadingClassifier(
         n_features=n_feat, n_layers=6, n_qubits=1, lr=0.01
     )
-    h1z = model_1q_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100)
+    h1z = model_1q_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100, batch_size=BS)
     results['single_qubit_zeroday'] = _evaluate(model_1q_zd, X_te_zd, y_te_zd, "Re-uploading 1q (zero-day)")
     results['single_qubit_zeroday']['history'] = h1z
 
     print("\n" + "=" * 60)
-    print("  4-QUBIT RE-UPLOADING — ZERO-DAY")
+    print(f"  4-QUBIT RE-UPLOADING — ZERO-DAY  (n_samples={N}, batch={BS})")
     print("=" * 60)
     model_4q_zd = ReuploadingClassifier(
         n_features=n_feat, n_layers=3, n_qubits=4, lr=0.01
     )
-    h4z = model_4q_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100)
+    h4z = model_4q_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100, batch_size=BS)
     results['multi_qubit_zeroday'] = _evaluate(model_4q_zd, X_te_zd, y_te_zd, "Re-uploading 4q (zero-day)")
     results['multi_qubit_zeroday']['history'] = h4z
 
-    # Save
-    out = LOGS / 'reuploading_results.json'
+    # Save with sample size in filename
+    out = LOGS / f'reuploading_{N}s.json'
     with open(out, 'w') as f:
         json.dump(results, f, indent=2)
     print(f"\nResults saved → {out}")
