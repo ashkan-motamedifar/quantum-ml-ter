@@ -5,8 +5,8 @@ TER: Quantum Computing for Machine Learning — IoT Intrusion Detection
 Models:
     - SVM (RBF kernel, grid-searched)
     - Random Forest
-    - Neural Network Small  (~207 params, matches QCNN)
-    - Neural Network Medium (~307 params, matches data re-uploading)
+    - Neural Network Small  (~207 params)
+    - Neural Network Medium (~307 params)
 
 Two evaluation modes:
     - Standard   : 3-class (normal / dos / injection)
@@ -41,8 +41,8 @@ def load_standard():
     """Load standard 3-class train/test split (quantum subsample)."""
     X_train = pd.read_csv(DATA / 'X_train_quantum.csv').values
     y_train = pd.read_csv(DATA / 'y_train_quantum.csv').values.ravel()
-    X_test  = pd.read_csv(DATA / 'X_test.csv').values[:200]
-    y_test  = pd.read_csv(DATA / 'y_test.csv').values.ravel()[:200]
+    X_test  = pd.read_csv(DATA / 'X_test_quantum.csv').values
+    y_test  = pd.read_csv(DATA / 'y_test_quantum.csv').values.ravel()
 
     le = LabelEncoder()
     y_train_enc = le.fit_transform(y_train)
@@ -187,14 +187,14 @@ def run_standard():
     metrics, _ = train_nn(
         X_tr, y_tr, X_te, y_te,
         hidden_layers=(16, 8),
-        name="NN-Medium (~307 params, matches Re-uploading)"
+        name="NN-Medium (~307 params)"
     )
     results.append(metrics)
 
     metrics, _ = train_nn(
         X_tr, y_tr, X_te, y_te,
         hidden_layers=(12, 6),
-        name="NN-Small (~207 params, matches QCNN)"
+        name="NN-Small (~207 params)"
     )
     results.append(metrics)
 
