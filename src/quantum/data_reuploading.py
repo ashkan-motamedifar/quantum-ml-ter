@@ -190,13 +190,10 @@ class ReuploadingClassifier:
 # ── Data loading ─────────────────────────────────────────────────────────────
 
 def load_standard(n_samples=500):
-    X_train = pd.read_csv(DATA / 'X_train.csv').values
-    y_train = pd.read_csv(DATA / 'y_train.csv').values.ravel()
-    X_test  = pd.read_csv(DATA / 'X_test.csv').values[:200]
-    y_test  = pd.read_csv(DATA / 'y_test.csv').values.ravel()[:200]
-    rng = np.random.default_rng(42)
-    idx_tr = rng.choice(len(X_train), size=n_samples, replace=False)
-    X_train, y_train = X_train[idx_tr], y_train[idx_tr]
+    X_train = pd.read_csv(DATA / 'X_train_quantum.csv').values
+    y_train = pd.read_csv(DATA / 'y_train_quantum.csv').values.ravel()
+    X_test  = pd.read_csv(DATA / 'X_test_quantum.csv').values
+    y_test  = pd.read_csv(DATA / 'y_test_quantum.csv').values.ravel()
     print(f"[Standard] Train: {X_train.shape} | Test: {X_test.shape}")
     return X_train, y_train, X_test, y_test
 
