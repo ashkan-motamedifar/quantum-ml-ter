@@ -109,14 +109,15 @@ class QCNNClassifier:
         self.circuits = []
         self.params_list = []
 
-    def _init_circuits(self, classes):
+    def _init_circuits(self, classes, seed=42):
         self.classes = classes
         self.circuits = []
         self.params_list = []
+        rng = np.random.RandomState(seed)
         for _ in classes:
             circuit, n_params = make_qcnn_circuit(self.n_qubits)
             # Small init to mitigate barren plateaus
-            params = np.random.uniform(-0.1, 0.1, (n_params,))
+            params = np.array(rng.uniform(-0.1, 0.1, (n_params,)), requires_grad=True)
             self.circuits.append(circuit)
             self.params_list.append(params)
 
@@ -127,7 +128,7 @@ class QCNNClassifier:
     def fit(self, X, y, n_epochs=100, batch_size=None, verbose=True):
         classes = np.unique(y)
         self._init_circuits(classes)
-        opt = qml.AdamOptimizer(stepsize=self.lr)
+        optimizers = [qml.AdamOptimizer(stepsize=self.lr) for _ in classes]
         history = {'epoch': [], 'loss': []}
         rng = np.random.default_rng(0)
 
@@ -150,7 +151,7 @@ class QCNNClassifier:
                         p, self.circuits[_i], X_b, y_binary
                     )
 
-                self.params_list[i], loss = opt.step_and_cost(
+                self.params_list[i], loss = optimizers[i].step_and_cost(
                     cost_fn, self.params_list[i]
                 )
                 total_loss += loss
@@ -181,7 +182,7 @@ class QCNNClassifier:
 
 # ── Data loading ─────────────────────────────────────────────────────────────
 
-def load_standard(n_samples=500):
+def load_standard():
     X_train = pd.read_csv(DATA / 'X_train_quantum.csv').values
     y_train = pd.read_csv(DATA / 'y_train_quantum.csv').values.ravel()
     X_test  = pd.read_csv(DATA / 'X_test_quantum.csv').values
@@ -256,7 +257,7 @@ if __name__ == '__main__':
     print("=" * 60)
     print(f"  QCNN — STANDARD EVALUATION  (n_samples={N}, batch={BS})")
     print("=" * 60)
-    X_tr, y_tr, X_te, y_te = load_standard(n_samples=N)
+    X_tr, y_tr, X_te, y_te = load_standard()
 
     model = QCNNClassifier(n_qubits=8, lr=0.01)
     history = model.fit(X_tr, y_tr, n_epochs=100, batch_size=BS)

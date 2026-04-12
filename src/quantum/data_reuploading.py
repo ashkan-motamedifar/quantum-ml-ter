@@ -103,26 +103,28 @@ class ReuploadingClassifier:
         self.circuits = []
         self.params_list = []
 
-    def _init_circuits(self, classes):
+    def _init_circuits(self, classes, seed=42):
         self.classes = classes
         self.circuits = []
         self.params_list = []
+        rng = np.random.RandomState(seed)
 
         for _ in classes:
             if self.n_qubits == 1:
                 circuit, _ = make_reuploading_circuit(
                     self.n_features, self.n_layers
                 )
-                # Small init for barren plateaus
-                params = np.random.uniform(
-                    -0.1, 0.1, (self.n_layers, 6)
+                params = np.array(
+                    rng.uniform(-0.1, 0.1, (self.n_layers, 6)),
+                    requires_grad=True
                 )
             else:
                 circuit, _ = make_multiqubit_reuploading_circuit(
                     self.n_features, self.n_qubits, self.n_layers
                 )
-                params = np.random.uniform(
-                    -0.1, 0.1, (self.n_layers, self.n_qubits, 6)
+                params = np.array(
+                    rng.uniform(-0.1, 0.1, (self.n_layers, self.n_qubits, 6)),
+                    requires_grad=True
                 )
 
             self.circuits.append(circuit)
@@ -135,7 +137,7 @@ class ReuploadingClassifier:
     def fit(self, X, y, n_epochs=100, batch_size=None, verbose=True):
         classes = np.unique(y)
         self._init_circuits(classes)
-        opt = qml.AdamOptimizer(stepsize=self.lr)
+        optimizers = [qml.AdamOptimizer(stepsize=self.lr) for _ in classes]
         history = {'epoch': [], 'loss': []}
         rng = np.random.default_rng(0)
 
@@ -158,7 +160,7 @@ class ReuploadingClassifier:
                         p, self.circuits[_i], X_b, y_binary
                     )
 
-                self.params_list[i], loss = opt.step_and_cost(
+                self.params_list[i], loss = optimizers[i].step_and_cost(
                     cost_fn, self.params_list[i]
                 )
                 total_loss += loss
@@ -189,7 +191,7 @@ class ReuploadingClassifier:
 
 # ── Data loading ─────────────────────────────────────────────────────────────
 
-def load_standard(n_samples=500):
+def load_standard():
     X_train = pd.read_csv(DATA / 'X_train_quantum.csv').values
     y_train = pd.read_csv(DATA / 'y_train_quantum.csv').values.ravel()
     X_test  = pd.read_csv(DATA / 'X_test_quantum.csv').values
@@ -258,7 +260,7 @@ if __name__ == '__main__':
 
     results = {}
 
-    X_tr, y_tr, X_te, y_te = load_standard(n_samples=N)
+    X_tr, y_tr, X_te, y_te = load_standard()
     n_feat = X_tr.shape[1]
 
     # --- Single-qubit (6 layers) ---
