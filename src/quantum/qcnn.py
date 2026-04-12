@@ -13,6 +13,7 @@ Usage:
 import argparse
 import pennylane as qml
 from pennylane import numpy as np
+import numpy as std_np
 import pandas as pd
 import json
 from pathlib import Path
@@ -113,7 +114,7 @@ class QCNNClassifier:
         self.classes = classes
         self.circuits = []
         self.params_list = []
-        rng = np.random.RandomState(seed)
+        rng = std_np.random.RandomState(seed)
         for _ in classes:
             circuit, n_params = make_qcnn_circuit(self.n_qubits)
             # Small init to mitigate barren plateaus
