@@ -192,11 +192,23 @@ class ReuploadingClassifier:
 
 # ── Data loading ─────────────────────────────────────────────────────────────
 
-def load_standard():
-    X_train = pd.read_csv(DATA / 'X_train_quantum.csv').values
-    y_train = pd.read_csv(DATA / 'y_train_quantum.csv').values.ravel()
+def load_standard(n_samples=500):
+    # Always use the same 200 test samples
     X_test  = pd.read_csv(DATA / 'X_test_quantum.csv').values
     y_test  = pd.read_csv(DATA / 'y_test_quantum.csv').values.ravel()
+
+    if n_samples == 500:
+        # Use pre-saved subset (same as classical baselines)
+        X_train = pd.read_csv(DATA / 'X_train_quantum.csv').values
+        y_train = pd.read_csv(DATA / 'y_train_quantum.csv').values.ravel()
+    else:
+        # Ablation: subsample from full training set
+        X_train = pd.read_csv(DATA / 'X_train.csv').values
+        y_train = pd.read_csv(DATA / 'y_train.csv').values.ravel()
+        rng = std_np.random.default_rng(42)
+        idx = rng.choice(len(X_train), size=n_samples, replace=False)
+        X_train, y_train = X_train[idx], y_train[idx]
+
     print(f"[Standard] Train: {X_train.shape} | Test: {X_test.shape}")
     return X_train, y_train, X_test, y_test
 
@@ -261,7 +273,7 @@ if __name__ == '__main__':
 
     results = {}
 
-    X_tr, y_tr, X_te, y_te = load_standard()
+    X_tr, y_tr, X_te, y_te = load_standard(n_samples=N)
     n_feat = X_tr.shape[1]
 
     # --- Single-qubit (6 layers) ---
