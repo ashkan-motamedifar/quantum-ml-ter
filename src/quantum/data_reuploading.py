@@ -202,12 +202,13 @@ def load_standard(n_samples=500):
         X_train = pd.read_csv(DATA / 'X_train_quantum.csv').values
         y_train = pd.read_csv(DATA / 'y_train_quantum.csv').values.ravel()
     else:
-        # Ablation: subsample from full training set
-        X_train = pd.read_csv(DATA / 'X_train.csv').values
-        y_train = pd.read_csv(DATA / 'y_train.csv').values.ravel()
-        rng = std_np.random.default_rng(42)
-        idx = rng.choice(len(X_train), size=n_samples, replace=False)
-        X_train, y_train = X_train[idx], y_train[idx]
+        # Ablation: stratified subsample from full training set
+        X_all = pd.read_csv(DATA / 'X_train.csv').values
+        y_all = pd.read_csv(DATA / 'y_train.csv').values.ravel()
+        from sklearn.model_selection import train_test_split
+        _, X_train, _, y_train = train_test_split(
+            X_all, y_all, test_size=n_samples, random_state=42, stratify=y_all
+        )
 
     print(f"[Standard] Train: {X_train.shape} | Test: {X_test.shape}")
     return X_train, y_train, X_test, y_test
