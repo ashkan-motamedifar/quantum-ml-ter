@@ -134,10 +134,15 @@ y_test_zd = pd.Series(np.ones(X_test_zd.shape[0], dtype=int))
 print(f"Zero-day — Train: {X_train_zd.shape}, Test: {X_test_zd.shape}")
 
 # ── Quantum subsample (same subset for classical and quantum) ───────────────
-X_train_q = X_train.sample(n=500, random_state=42)
-y_train_q = y_train.loc[X_train_q.index]
-X_test_q = X_test.sample(n=min(200, len(X_test)), random_state=42)
-y_test_q = y_test.loc[X_test_q.index]
+# Stratified sampling to keep class balance
+from sklearn.model_selection import train_test_split as _split
+
+_, X_train_q, _, y_train_q = _split(
+    X_train, y_train, test_size=500, random_state=42, stratify=y_train
+)
+_, X_test_q, _, y_test_q = _split(
+    X_test, y_test, test_size=min(200, len(X_test)), random_state=42, stratify=y_test
+)
 
 # ── Save ────────────────────────────────────────────────────────────────────
 X_train.to_csv(DATA / 'X_train.csv', index=False)
