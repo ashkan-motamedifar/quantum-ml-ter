@@ -135,9 +135,9 @@ class ReuploadingClassifier:
         predictions = np.array([circuit(x, params) for x in X])
         return np.mean((y_binary - predictions) ** 2)
 
-    def fit(self, X, y, n_epochs=100, batch_size=None, verbose=True):
+    def fit(self, X, y, n_epochs=100, batch_size=None, verbose=True, seed=42):
         classes = np.unique(y)
-        self._init_circuits(classes)
+        self._init_circuits(classes, seed=seed)
         optimizers = [qml.AdamOptimizer(stepsize=self.lr) for _ in classes]
         history = {'epoch': [], 'loss': []}
         rng = np.random.default_rng(0)
@@ -268,8 +268,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--n_samples', type=int, default=500,
                         help='Number of training samples (default: 500)')
+    parser.add_argument('--seed', type=int, default=42,
+                        help='Random seed for parameter init (default: 42)')
     args = parser.parse_args()
     N = args.n_samples
+    S = args.seed
     BS = 100 if N > 500 else None  # mini-batch for large datasets
 
     results = {}
@@ -279,23 +282,23 @@ if __name__ == '__main__':
 
     # --- Single-qubit (6 layers) ---
     print("=" * 60)
-    print(f"  SINGLE-QUBIT RE-UPLOADING — STANDARD  (n_samples={N}, batch={BS})")
+    print(f"  SINGLE-QUBIT RE-UPLOADING — STANDARD  (n_samples={N}, seed={S}, batch={BS})")
     print("=" * 60)
     model_1q = ReuploadingClassifier(
         n_features=n_feat, n_layers=6, n_qubits=1, lr=0.01
     )
-    h1 = model_1q.fit(X_tr, y_tr, n_epochs=100, batch_size=BS)
+    h1 = model_1q.fit(X_tr, y_tr, n_epochs=100, batch_size=BS, seed=S)
     results['single_qubit_standard'] = _evaluate(model_1q, X_te, y_te, "Re-uploading 1q (standard)")
     results['single_qubit_standard']['history'] = h1
 
     # --- Multi-qubit (4 qubits, 3 layers) ---
     print("\n" + "=" * 60)
-    print(f"  4-QUBIT RE-UPLOADING — STANDARD  (n_samples={N}, batch={BS})")
+    print(f"  4-QUBIT RE-UPLOADING — STANDARD  (n_samples={N}, seed={S}, batch={BS})")
     print("=" * 60)
     model_4q = ReuploadingClassifier(
         n_features=n_feat, n_layers=3, n_qubits=4, lr=0.01
     )
-    h4 = model_4q.fit(X_tr, y_tr, n_epochs=100, batch_size=BS)
+    h4 = model_4q.fit(X_tr, y_tr, n_epochs=100, batch_size=BS, seed=S)
     results['multi_qubit_standard'] = _evaluate(model_4q, X_te, y_te, "Re-uploading 4q (standard)")
     results['multi_qubit_standard']['history'] = h4
 
@@ -303,27 +306,27 @@ if __name__ == '__main__':
     X_tr_zd, y_tr_zd, X_te_zd, y_te_zd = load_zeroday(n_samples=N)
 
     print("\n" + "=" * 60)
-    print(f"  SINGLE-QUBIT RE-UPLOADING — ZERO-DAY  (n_samples={N}, batch={BS})")
+    print(f"  SINGLE-QUBIT RE-UPLOADING — ZERO-DAY  (n_samples={N}, seed={S}, batch={BS})")
     print("=" * 60)
     model_1q_zd = ReuploadingClassifier(
         n_features=n_feat, n_layers=6, n_qubits=1, lr=0.01
     )
-    h1z = model_1q_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100, batch_size=BS)
+    h1z = model_1q_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100, batch_size=BS, seed=S)
     results['single_qubit_zeroday'] = _evaluate(model_1q_zd, X_te_zd, y_te_zd, "Re-uploading 1q (zero-day)")
     results['single_qubit_zeroday']['history'] = h1z
 
     print("\n" + "=" * 60)
-    print(f"  4-QUBIT RE-UPLOADING — ZERO-DAY  (n_samples={N}, batch={BS})")
+    print(f"  4-QUBIT RE-UPLOADING — ZERO-DAY  (n_samples={N}, seed={S}, batch={BS})")
     print("=" * 60)
     model_4q_zd = ReuploadingClassifier(
         n_features=n_feat, n_layers=3, n_qubits=4, lr=0.01
     )
-    h4z = model_4q_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100, batch_size=BS)
+    h4z = model_4q_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100, batch_size=BS, seed=S)
     results['multi_qubit_zeroday'] = _evaluate(model_4q_zd, X_te_zd, y_te_zd, "Re-uploading 4q (zero-day)")
     results['multi_qubit_zeroday']['history'] = h4z
 
-    # Save with sample size in filename
-    out = LOGS / f'reuploading_{N}s.json'
+    # Save with sample size and seed in filename
+    out = LOGS / f'reuploading_{N}s_seed{S}.json'
     with open(out, 'w') as f:
         json.dump(results, f, indent=2)
     print(f"\nResults saved → {out}")

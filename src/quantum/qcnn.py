@@ -126,9 +126,9 @@ class QCNNClassifier:
         predictions = np.array([circuit(x, params) for x in X])
         return np.mean((y_binary - predictions) ** 2)
 
-    def fit(self, X, y, n_epochs=100, batch_size=None, verbose=True):
+    def fit(self, X, y, n_epochs=100, batch_size=None, verbose=True, seed=42):
         classes = np.unique(y)
-        self._init_circuits(classes)
+        self._init_circuits(classes, seed=seed)
         optimizers = [qml.AdamOptimizer(stepsize=self.lr) for _ in classes]
         history = {'epoch': [], 'loss': []}
         rng = np.random.default_rng(0)
@@ -261,36 +261,39 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--n_samples', type=int, default=500,
                         help='Number of training samples (default: 500)')
+    parser.add_argument('--seed', type=int, default=42,
+                        help='Random seed for parameter init (default: 42)')
     args = parser.parse_args()
     N = args.n_samples
+    S = args.seed
     BS = 100 if N > 500 else None  # mini-batch for large datasets
 
     results = {}
 
     # Standard 3-class
     print("=" * 60)
-    print(f"  QCNN — STANDARD EVALUATION  (n_samples={N}, batch={BS})")
+    print(f"  QCNN — STANDARD  (n_samples={N}, seed={S}, batch={BS})")
     print("=" * 60)
     X_tr, y_tr, X_te, y_te = load_standard(n_samples=N)
 
     model = QCNNClassifier(n_qubits=8, lr=0.01)
-    history = model.fit(X_tr, y_tr, n_epochs=100, batch_size=BS)
+    history = model.fit(X_tr, y_tr, n_epochs=100, batch_size=BS, seed=S)
     results['standard'] = _evaluate(model, X_te, y_te, "QCNN (standard)")
     results['standard']['history'] = history
 
     # Zero-day
     print("\n" + "=" * 60)
-    print(f"  QCNN — ZERO-DAY EVALUATION  (n_samples={N}, batch={BS})")
+    print(f"  QCNN — ZERO-DAY  (n_samples={N}, seed={S}, batch={BS})")
     print("=" * 60)
     X_tr_zd, y_tr_zd, X_te_zd, y_te_zd = load_zeroday(n_samples=N)
 
     model_zd = QCNNClassifier(n_qubits=8, lr=0.01)
-    history_zd = model_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100, batch_size=BS)
+    history_zd = model_zd.fit(X_tr_zd, y_tr_zd, n_epochs=100, batch_size=BS, seed=S)
     results['zeroday'] = _evaluate(model_zd, X_te_zd, y_te_zd, "QCNN (zero-day)")
     results['zeroday']['history'] = history_zd
 
-    # Save with sample size in filename
-    out = LOGS / f'qcnn_{N}s.json'
+    # Save with sample size and seed in filename
+    out = LOGS / f'qcnn_{N}s_seed{S}.json'
     with open(out, 'w') as f:
         json.dump(results, f, indent=2)
     print(f"\nResults saved → {out}")
