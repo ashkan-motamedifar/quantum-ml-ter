@@ -33,10 +33,10 @@ LOGS.mkdir(parents=True, exist_ok=True)
 
 def make_reuploading_circuit(n_features, n_layers):
     """Single-qubit data re-uploading. 6 params per layer."""
-    dev = qml.device('default.qubit', wires=1)
+    dev = qml.device('lightning.qubit', wires=1)
     n_params = 6 * n_layers
 
-    @qml.qnode(dev, interface='autograd')
+    @qml.qnode(dev, interface='autograd', diff_method='adjoint')
     def circuit(x, params):
         for l in range(n_layers):
             biases  = params[l, :3]
@@ -59,10 +59,10 @@ def make_reuploading_circuit(n_features, n_layers):
 
 def make_multiqubit_reuploading_circuit(n_features, n_qubits, n_layers):
     """Multi-qubit re-uploading with CZ entanglement. Measures ALL qubits."""
-    dev = qml.device('default.qubit', wires=n_qubits)
+    dev = qml.device('lightning.qubit', wires=n_qubits)
     n_params = 6 * n_qubits * n_layers
 
-    @qml.qnode(dev, interface='autograd')
+    @qml.qnode(dev, interface='autograd', diff_method='adjoint')
     def circuit(x, params):
         for l in range(n_layers):
             for q in range(n_qubits):

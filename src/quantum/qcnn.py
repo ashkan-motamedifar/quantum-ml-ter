@@ -67,9 +67,9 @@ def make_qcnn_circuit(n_qubits=8):
     8-qubit QCNN: 3 conv-pool stages + FC layer.
     Total: 3×6 (conv) + 3×2 (pool) + 3 (FC) = 27 parameters.
     """
-    dev = qml.device('default.qubit', wires=n_qubits)
+    dev = qml.device('lightning.qubit', wires=n_qubits)
 
-    @qml.qnode(dev, interface='autograd')
+    @qml.qnode(dev, interface='autograd', diff_method='adjoint')
     def circuit(x, params):
         # Angle encoding
         for i in range(n_qubits):

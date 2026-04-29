@@ -1,0 +1,54 @@
+{
+  "qcnn": {
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "standard": {
+      "acc_mean": 0.679,
+      "acc_std": 0.02507987240796889,
+      "mcc_mean": 0.559166000499438,
+      "mcc_std": 0.04345398001564051
+    },
+    "zeroday": {
+      "acc_mean": 0.48999999999999994,
+      "acc_std": 0.3051802745919205,
+      "mcc_mean": 0.0,
+      "mcc_std": 0.0
+    }
+  },
+  "reuploading": {
+    "single_qubit_standard": {
+      "acc_mean": 0.7514999999999998,
+      "acc_std": 0.03847401720642127,
+      "mcc_mean": 0.6616699238317377,
+      "mcc_std": 0.04536529343732836
+    },
+    "multi_qubit_standard": {
+      "acc_mean": 0.692,
+      "acc_std": 0.011445523142259566,
+      "mcc_mean": 0.5856317473636767,
+      "mcc_std": 0.015902055977820868
+    },
+    "single_qubit_zeroday": {
+      "acc_mean": 0.092,
+      "acc_std": 0.035651086939951775,
+      "mcc_mean": 0.0,
+      "mcc_std": 0.0
+    },
+    "multi_qubit_zeroday": {
+      "acc_mean": 0.0745,
+      "acc_std": 0.022522211259110417,
+      "mcc_mean": 0.0,
+      "mcc_std": 0.0
+    }
+  }
+}

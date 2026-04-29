@@ -1,0 +1,84 @@
+{
+  "model": "Autoencoder",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    42
+  ],
+  "percentile_threshold": 95,
+  "detection_injection_mean": 0.7540233153255615,
+  "detection_injection_std": 0.17580490839407253,
+  "fpr_mean": 0.05031982942430704,
+  "fpr_std": 0.005297695850343773,
+  "accuracy_mean": 0.7540233153255615,
+  "accuracy_std": 0.17580490839407253,
+  "per_seed": [
+    {
+      "model": "Autoencoder",
+      "seed": 0,
+      "percentile_threshold": 95,
+      "threshold": 0.0035796258598566055,
+      "fpr_normal": 0.05543710021321962,
+      "detection_dos": 0.9579171850008886,
+      "detection_injection": 0.9736991754336082,
+      "accuracy": 0.9736991754336082,
+      "f1": 0.986674349924368,
+      "architecture": "8-6-4-6-8",
+      "n_epochs": 100
+    },
+    {
+      "model": "Autoencoder",
+      "seed": 1,
+      "percentile_threshold": 95,
+      "threshold": 0.011394007131457329,
+      "fpr_normal": 0.05294953802416489,
+      "detection_dos": 0.9580593566731829,
+      "detection_injection": 0.6663349445550185,
+      "accuracy": 0.6663349445550185,
+      "f1": 0.7997611125330604,
+      "architecture": "8-6-4-6-8",
+      "n_epochs": 100
+    },
+    {
+      "model": "Autoencoder",
+      "seed": 2,
+      "percentile_threshold": 95,
+      "threshold": 0.00718918489292264,
+      "fpr_normal": 0.055081734186211796,
+      "detection_dos": 0.9579171850008886,
+      "detection_injection": 0.7705430764856411,
+      "accuracy": 0.7705430764856411,
+      "f1": 0.8704030833467159,
+      "architecture": "8-6-4-6-8",
+      "n_epochs": 100
+    },
+    {
+      "model": "Autoencoder",
+      "seed": 3,
+      "percentile_threshold": 95,
+      "threshold": 0.03581492230296135,
+      "fpr_normal": 0.04228855721393035,
+      "detection_dos": 0.9714590367869202,
+      "detection_injection": 0.47085584304805234,
+      "accuracy": 0.47085584304805234,
+      "f1": 0.6402474386236227,
+      "architecture": "8-6-4-6-8",
+      "n_epochs": 100
+    },
+    {
+      "model": "Autoencoder",
+      "seed": 42,
+      "percentile_threshold": 95,
+      "threshold": 0.007159900851547718,
+      "fpr_normal": 0.04584221748400853,
+      "detection_dos": 0.9579171850008886,
+      "detection_injection": 0.8886835371054876,
+      "accuracy": 0.8886835371054876,
+      "f1": 0.9410613473842679,
+      "architecture": "8-6-4-6-8",
+      "n_epochs": 100
+    }
+  ]
+}
