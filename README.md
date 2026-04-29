@@ -15,7 +15,7 @@ Two quantum architectures are implemented from scratch in PennyLane:
 - **QCNN** (Hur et al., 2022) — 8 qubits, 3 conv-pool stages
 - **Data Re-uploading** (Pérez-Salinas et al., 2020) — single-qubit and 4-qubit variants
 
-Benchmarked against SVM, Random Forest, and two neural networks under identical conditions, averaged over 5 seeds.
+Classical baselines: SVM, Random Forest, two neural networks (supervised), and an autoencoder anomaly detector (unsupervised). Quantum and autoencoder results averaged over 10 seeds.
 
 ---
 
@@ -29,21 +29,22 @@ Benchmarked against SVM, Random Forest, and two neural networks under identical 
 | SVM (RBF) | 0.970 | 0.955 |
 | NN-Medium | 0.960 | 0.940 |
 | NN-Small | 0.925 | 0.888 |
-| Re-uploading 1q | 0.738 ± 0.024 | 0.645 ± 0.028 |
-| Re-uploading 4q | 0.692 ± 0.005 | 0.586 ± 0.007 |
-| QCNN (8q) | 0.677 ± 0.030 | 0.556 ± 0.051 |
+| Re-uploading 1q | 0.752 ± 0.039 | 0.662 ± 0.045 |
+| Re-uploading 4q | 0.692 ± 0.011 | 0.586 ± 0.016 |
+| QCNN (8q) | 0.679 ± 0.025 | 0.559 ± 0.043 |
 
 ### Zero-day detection (trained on normal+DoS, tested on injection)
 
 | Model | Accuracy |
 |---|---|
-| QCNN (8q) — 5 seeds | 0.566 ± 0.281 |
-| QCNN (8q) — 4 seeds (excl. barren plateau) | 0.705 ± 0.042 |
-| Re-uploading 1q | 0.081 ± 0.020 |
-| Re-uploading 4q | 0.070 ± 0.020 |
-| Best classical (NN-Small) | 0.028 |
+| Autoencoder (10 seeds) | **0.705 ± 0.144** |
+| QCNN (8q) — 7 seeds (excl. barren plateau) | **0.686 ± 0.068** |
+| QCNN (8q) — 10 seeds (all) | 0.490 ± 0.305 |
+| Re-uploading 1q | 0.092 ± 0.036 |
+| Re-uploading 4q | 0.075 ± 0.023 |
+| Best supervised classical (NN-Small) | 0.028 |
 
-**Main finding:** the QCNN detects ~70% of unseen attacks on 4 out of 5 seeds, while every classical model fails below 3%. One seed collapses to 1% (barren plateau), illustrating the need for multi-seed evaluation.
+**Main finding:** every supervised classical model fails on zero-day (<3%). Two unsupervised approaches succeed at comparable levels — the autoencoder (70.5%) and the QCNN excluding barren-plateau seeds (68.6%) — through very different mechanisms. The QCNN reaches this with 56× less training data and lower variance when convergent, but suffers a 30% barren-plateau failure rate (vs. 10% for the autoencoder).
 
 ---
 
@@ -66,7 +67,7 @@ Balanced via random undersampling to 35,168 per class.
 ```
 ├── src/
 │   ├── preprocessing/   feature selection, normalization, splits
-│   ├── classical/       SVM, Random Forest, NN baselines
+│   ├── classical/       SVM, Random Forest, NN, autoencoder
 │   └── quantum/         QCNN, data re-uploading, validation
 ├── scripts/             shell scripts for running experiments
 ├── results/
@@ -90,14 +91,18 @@ python src/preprocessing/preprocess.py
 
 # 3. Classical baselines
 python src/classical/classical_baselines.py
+python src/classical/autoencoder.py
 
 # 4. Quantum classifiers (500 samples, 100 epochs, seed 42)
 python -m src.quantum.qcnn
 python -m src.quantum.data_reuploading
 
-# 5. Multi-seed evaluation
-bash scripts/run_qcnn_multiseed.sh
-bash scripts/run_reuploading_multiseed.sh
+# 5. Multi-seed evaluation (10 seeds, 4 parallel terminals)
+bash scripts/run_qcnn_10seed_A.sh    # seeds 0-4
+bash scripts/run_qcnn_10seed_B.sh    # seeds 5-9
+bash scripts/run_reup_10seed_A.sh    # seeds 0-4
+bash scripts/run_reup_10seed_B.sh    # seeds 5-9
+bash scripts/summarize_10seed.sh     # aggregate results
 
 # 6. Build report
 cd report && pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
