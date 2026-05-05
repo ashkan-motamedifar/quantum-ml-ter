@@ -57,6 +57,7 @@ def train_and_evaluate(X_train, y_train, X_test, y_test, n_layers, n_epochs,
     """Train a single binary re-uploading classifier and evaluate."""
     n_features = X_train.shape[1]
     circuit = make_circuit(n_features, n_layers)
+    np.random.seed(42)  # deterministic param init for the validation experiment
     params = np.random.uniform(-0.1, 0.1, (n_layers, 6))
     opt = qml.AdamOptimizer(stepsize=0.05)
 

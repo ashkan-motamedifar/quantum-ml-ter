@@ -1,6 +1,8 @@
 #!/bin/bash
-# Run QCNN 500 samples with 5 different seeds
-cd "$(dirname "$0")"
+# LEGACY 5-seed script (kept for historical runs).
+# The report uses the 10-seed evaluation: see run_qcnn_10seed_A.sh and run_qcnn_10seed_B.sh.
+# Run QCNN 500 samples with 5 different seeds (0-4)
+cd "$(dirname "$0")/.."
 source venv/bin/activate
 
 for seed in 0 1 2 3 4; do

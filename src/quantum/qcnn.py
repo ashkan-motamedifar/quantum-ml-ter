@@ -31,7 +31,7 @@ LOGS.mkdir(parents=True, exist_ok=True)
 # ── Circuit building blocks ──────────────────────────────────────────────────
 
 def _two_qubit_gate(params, wires):
-    """Ansatz 6 from Hur et al.: Ry Rz on each qubit, CNOT, Ry Rz on target."""
+    """6-parameter Hur-inspired block: RY/RZ on both qubits, CNOT, then RY/RZ on target."""
     qml.RY(params[0], wires=wires[0])
     qml.RZ(params[1], wires=wires[0])
     qml.RY(params[2], wires=wires[1])

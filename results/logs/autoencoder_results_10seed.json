@@ -30,7 +30,7 @@
       "detection_injection": 0.9736991754336082,
       "accuracy": 0.9736991754336082,
       "f1": 0.986674349924368,
-      "architecture": "8-6-4-6-8",
+      "architecture": "8-6-3-6-8",
       "n_epochs": 100
     },
     {
@@ -43,7 +43,7 @@
       "detection_injection": 0.6663349445550185,
       "accuracy": 0.6663349445550185,
       "f1": 0.7997611125330604,
-      "architecture": "8-6-4-6-8",
+      "architecture": "8-6-3-6-8",
       "n_epochs": 100
     },
     {
@@ -56,7 +56,7 @@
       "detection_injection": 0.7705430764856411,
       "accuracy": 0.7705430764856411,
       "f1": 0.8704030833467159,
-      "architecture": "8-6-4-6-8",
+      "architecture": "8-6-3-6-8",
       "n_epochs": 100
     },
     {
@@ -69,7 +69,7 @@
       "detection_injection": 0.47085584304805234,
       "accuracy": 0.47085584304805234,
       "f1": 0.6402474386236227,
-      "architecture": "8-6-4-6-8",
+      "architecture": "8-6-3-6-8",
       "n_epochs": 100
     },
     {
@@ -82,7 +82,7 @@
       "detection_injection": 0.6855274381575206,
       "accuracy": 0.6855274381575206,
       "f1": 0.8134278002699056,
-      "architecture": "8-6-4-6-8",
+      "architecture": "8-6-3-6-8",
       "n_epochs": 100
     },
     {
@@ -95,7 +95,7 @@
       "detection_injection": 0.5052601649132784,
       "accuracy": 0.5052601649132784,
       "f1": 0.6713260294673215,
-      "architecture": "8-6-4-6-8",
+      "architecture": "8-6-3-6-8",
       "n_epochs": 100
     },
     {
@@ -108,7 +108,7 @@
       "detection_injection": 0.721779926073358,
       "accuracy": 0.721779926073358,
       "f1": 0.8384113615721245,
-      "architecture": "8-6-4-6-8",
+      "architecture": "8-6-3-6-8",
       "n_epochs": 100
     },
     {
@@ -121,7 +121,7 @@
       "detection_injection": 0.6758601080466307,
       "accuracy": 0.6758601080466307,
       "f1": 0.8065829657278588,
-      "architecture": "8-6-4-6-8",
+      "architecture": "8-6-3-6-8",
       "n_epochs": 100
     },
     {
@@ -134,7 +134,7 @@
       "detection_injection": 0.6923514358828547,
       "accuracy": 0.6923514358828547,
       "f1": 0.8182123655913979,
-      "architecture": "8-6-4-6-8",
+      "architecture": "8-6-3-6-8",
       "n_epochs": 100
     },
     {
@@ -147,7 +147,7 @@
       "detection_injection": 0.8886835371054876,
       "accuracy": 0.8886835371054876,
       "f1": 0.9410613473842679,
-      "architecture": "8-6-4-6-8",
+      "architecture": "8-6-3-6-8",
       "n_epochs": 100
     }
   ]

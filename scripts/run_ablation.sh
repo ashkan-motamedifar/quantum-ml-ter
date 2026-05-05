@@ -4,7 +4,7 @@
 # Usage: ./run_ablation.sh
 
 set -e
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 source venv/bin/activate 2>/dev/null || true
 export PYTHONUNBUFFERED=1
 
