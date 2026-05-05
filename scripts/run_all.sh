@@ -1,6 +1,6 @@
 #!/bin/bash
 # Run everything in order
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 source venv/bin/activate
 
 SEED=${1:-42}  # Default seed=42, or pass as argument

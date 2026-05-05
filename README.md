@@ -44,7 +44,7 @@ Classical baselines: SVM, Random Forest, two neural networks (supervised), and a
 | Re-uploading 4q | 0.075 ± 0.023 |
 | Best supervised classical (NN-Small) | 0.028 |
 
-**Main finding:** every supervised classical model fails on zero-day (<3%). Two unsupervised approaches succeed at comparable levels — the autoencoder (70.5%) and the QCNN excluding barren-plateau seeds (68.6%) — through very different mechanisms. The QCNN reaches this with 56× less training data and lower variance when convergent, but suffers a 30% barren-plateau failure rate (vs. 10% for the autoencoder).
+**Main finding:** every supervised classical model fails on zero-day (<3%). Two approaches reach ~70% — the autoencoder (70.5%, trained unsupervised on normal traffic only) and the QCNN excluding barren-plateau seeds (68.6%, trained supervised on normal-vs-DoS but transferring to injection). The QCNN reaches this with 56× less training data and lower variance when convergent, but suffers a 30% barren-plateau failure rate (vs. 10% for the autoencoder).
 
 ---
 
@@ -86,25 +86,29 @@ Balanced via random undersampling to 35,168 per class.
 python3.11 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 
-# 2. Preprocess
+# 2. Data: download Network_dataset_11.csv from the ToN_IoT benchmark
+#    (https://research.unsw.edu.au/projects/toniot-datasets) and place it at
+#    data/Network_dataset_11.csv before running preprocessing.
+
+# 3. Preprocess
 python src/preprocessing/preprocess.py
 
-# 3. Classical baselines
+# 4. Classical baselines
 python src/classical/classical_baselines.py
-python src/classical/autoencoder.py
+python src/classical/autoencoder.py    # 10 seeds → autoencoder_results_10seed.json
 
-# 4. Quantum classifiers (500 samples, 100 epochs, seed 42)
+# 5. Quantum classifiers (500 samples, 100 epochs, seed 42)
 python -m src.quantum.qcnn
 python -m src.quantum.data_reuploading
 
-# 5. Multi-seed evaluation (10 seeds, 4 parallel terminals)
+# 6. Multi-seed evaluation (10 seeds, 4 parallel terminals)
 bash scripts/run_qcnn_10seed_A.sh    # seeds 0-4
 bash scripts/run_qcnn_10seed_B.sh    # seeds 5-9
 bash scripts/run_reup_10seed_A.sh    # seeds 0-4
 bash scripts/run_reup_10seed_B.sh    # seeds 5-9
 bash scripts/summarize_10seed.sh     # aggregate results
 
-# 6. Build report
+# 7. Build report
 cd report && pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
 ```
 

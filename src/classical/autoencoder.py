@@ -166,12 +166,12 @@ def run(seed=42, percentile=95):
         'detection_injection': det_injection,
         'accuracy': float(acc),
         'f1': float(f1),
-        'architecture': '8-6-4-6-8',
+        'architecture': '8-6-3-6-8',
         'n_epochs': n_epochs,
     }
 
 
-def run_multiseed(seeds=(0, 1, 2, 3, 42), percentile=95):
+def run_multiseed(seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 42), percentile=95):
     results = []
     for s in seeds:
         print(f"\n--- seed {s} ---")
@@ -204,8 +204,9 @@ def run_multiseed(seeds=(0, 1, 2, 3, 42), percentile=95):
 
 
 if __name__ == '__main__':
+    # Default: 10 seeds matching the report — (0,1,2,3,4,5,6,7,8,42)
     summary = run_multiseed()
-    out_path = LOGS / 'autoencoder_results.json'
+    out_path = LOGS / 'autoencoder_results_10seed.json'
     with open(out_path, 'w') as f:
         json.dump(summary, f, indent=2)
     print(f"\nResults saved → {out_path}")
