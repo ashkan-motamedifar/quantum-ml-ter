@@ -114,4 +114,4 @@ cd report && pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex m
 
 ---
 
-**Ashkan Motamedifar** — [motamedifar.ashkan@etu.unistra.fr](mailto:motamedifar.ashkan@etu.unistra.fr)
+**Ashkan Motamedifar** — [montamedifar.ashkan@etu.unistra.fr](mailto:montamedifar.ashkan@etu.unistra.fr)
