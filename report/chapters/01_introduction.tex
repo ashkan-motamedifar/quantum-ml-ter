@@ -1,0 +1,18 @@
+\chapter{Introduction}
+\label{chap:introduction}
+
+Machine learning has become a key tool for solving complex classification and prediction tasks across many domains, including network security. Classical models such as neural networks and support vector machines perform well, but their computational cost grows as datasets become larger and more complex. This raises the question of whether alternative computing paradigms could offer practical advantages.
+
+Quantum computing exploits the physical phenomena of superposition and entanglement to process information in fundamentally different ways from classical computers. In recent years, researchers have proposed \emph{parameterized quantum circuits}~\cite{benedetti2019parameterized} as trainable models for machine learning, where quantum gate parameters are optimized in the same way as weights in a neural network. Two architectures are particularly relevant to this work: \emph{data re-uploading}~\cite{perez2020data}, which encodes classical data multiple times into a quantum circuit to build a universal classifier, and \emph{Quantum Convolutional Neural Networks} (QCNN)~\cite{hur2022quantum}, which adapt the classical CNN structure to quantum circuits with logarithmic depth.
+
+These quantum models are designed to operate on current \emph{Noisy Intermediate-Scale Quantum} (NISQ) devices~\cite{preskill2018quantum}, which are limited in both the number of qubits and the circuit depth that can be reliably executed.
+
+In this work, I apply quantum machine learning to \textbf{network traffic classification} using the ToN\_IoT dataset~\cite{toniot2020dataset}, which contains one million IoT network flow records labeled as normal traffic, Denial-of-Service (DoS) attacks, or injection attacks. The dataset is heavily imbalanced. Because zero-day detection is closer to anomaly detection than to closed-set classification, I additionally include an autoencoder trained on normal traffic only as an unsupervised baseline. I address the following objectives:
+
+\begin{enumerate}[nosep]
+    \item Compare quantum classifiers with supervised and unsupervised classical baselines on the same network dataset.
+    \item Evaluate data re-uploading and QCNN architectures in terms of accuracy, parameter efficiency, and initialization sensitivity.
+    \item Test the ability of these models to detect \emph{zero-day attacks}---attack types absent from the training data.
+\end{enumerate}
+
+All quantum experiments are implemented using PennyLane~\cite{pennylane}. The remainder of this manuscript covers quantum foundations (Chapters~2--3), the dataset and implementation (Chapters~4--5), results and conclusion (Chapters~6--7).

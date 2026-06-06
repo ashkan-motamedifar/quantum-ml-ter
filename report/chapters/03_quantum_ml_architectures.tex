@@ -1,0 +1,88 @@
+\chapter{Quantum Machine Learning Architectures}
+\label{chap:architectures}
+
+This chapter describes the two quantum classification architectures investigated in this work: the data re-uploading classifier~\cite{perez2020data} and the Quantum Convolutional Neural Network (QCNN)~\cite{hur2022quantum}. For each architecture, I present the circuit structure, the rationale behind its design, and the cost functions used for training. I then describe the classical baselines used for comparison.
+% ============================================================
+\section{Data Re-uploading Classifier}
+\label{sec:reuploading}
+
+The data re-uploading classifier, proposed by P\'erez-Salinas et al.~\cite{perez2020data}, is based on a key insight: a single qubit can act as a universal classifier if the classical input data is \emph{re-uploaded} into the circuit multiple times, interleaved with trainable rotations.
+
+\subsection{Architecture}
+
+The circuit consists of $L$ layers, each applying a general SU(2) rotation to a single qubit. In each layer~$l$, the rotation angles are a linear combination of the input data $\mathbf{x}$ and trainable parameters:
+\begin{equation}
+    \mathcal{L}^{(l)}(\mathbf{x}, \boldsymbol{\theta}^{(l)}, \mathbf{w}^{(l)}) = R_z\!\big(\theta_3^{(l)} + w_3^{(l)} x_3\big)\; R_y\!\big(\theta_2^{(l)} + w_2^{(l)} x_2\big)\; R_z\!\big(\theta_1^{(l)} + w_1^{(l)} x_1\big),
+    \label{eq:reup_layer}
+\end{equation}
+where $\boldsymbol{\theta}^{(l)}$ are bias parameters and $\mathbf{w}^{(l)}$ are weight parameters that control how strongly each feature influences the rotation. The full circuit applies all layers sequentially to the initial state $\ket{0}$:
+\begin{equation}
+    \ket{\psi(\mathbf{x})} = \mathcal{L}^{(L)} \cdots \mathcal{L}^{(2)}\, \mathcal{L}^{(1)} \ket{0}.
+    \label{eq:reup_full}
+\end{equation}
+
+Each layer has 6~trainable parameters (3~biases and 3~weights), so an $L$-layer single-qubit circuit has $6L$~parameters in total.
+
+% ============================================================
+\subsection{Universality}
+
+A central result of P\'erez-Salinas et al.~\cite{perez2020data} is that the data re-uploading circuit is a \emph{universal quantum classifier}: with enough layers, it can approximate any continuous classification boundary. Each additional layer increases the degree of the trigonometric polynomial that the circuit can represent~\cite{schuld2021effect}, playing the same role as depth in a classical network. In practice, $L = 5$--$20$ layers suffice for common tasks.
+% ============================================================
+
+\subsection{Multi-Qubit Extension}
+
+When more qubits are available, the data re-uploading scheme extends naturally: each qubit receives its own re-uploading layers processing a subset of the input features, and entangling gates (CZ) are applied between neighboring qubits after each layer to create correlations. This allows the circuit to capture relationships between features encoded on different qubits and reduces the number of layers required to achieve a given accuracy.
+
+In the multi-qubit variant, each qubit independently applies $R_z$--$R_y$--$R_z$ rotations mixing data and trainable weights, then CZ gates entangle neighboring qubits before the next layer begins. For $n$~qubits with $L$~layers, the total parameter count is $6nL$ (the CZ gates are parameter-free). The full circuit diagram of the 4-qubit, 3-layer variant used in this work is given in Figure~\ref{fig:reup_multi_circuit} of Appendix~\ref{app:circuits}.
+% ============================================================
+\subsection{Cost Function}
+\label{subsec:reup_cost}
+
+P\'erez-Salinas et al.~\cite{perez2020data} proposed fidelity-based cost functions that measure the overlap between the circuit output state and a target state assigned to each class. In this work, I use MSE loss with binary targets $\{-1,+1\}$ for consistency with the QCNN (Section~\ref{subsec:qcnn_cost}).
+
+% ============================================================
+\section{Quantum Convolutional Neural Network}
+\label{sec:qcnn}
+
+The Quantum Convolutional Neural Network (QCNN), proposed by Hur et al.~\cite{hur2022quantum}, adapts the hierarchical structure of classical CNNs to quantum circuits. It consists of alternating convolutional and pooling layers that progressively reduce the number of active qubits until a final measurement is performed.
+
+\subsection{Architecture}
+
+The QCNN operates on $n$~qubits (typically $n = 2^k$) and consists of three types of layers:
+
+\textbf{Convolutional layers} apply the same parameterized two-qubit unitary~$U(\boldsymbol{\theta})$ to all neighboring pairs of qubits. The weight sharing (same parameters for all pairs) mirrors the translational invariance of classical convolutional filters and significantly reduces the parameter count. Hur et al.~\cite{hur2022quantum} tested 9~different circuit ansätze for this unitary, varying in the number of CNOT and rotation gates. In this work, I use a 6-parameter $R_y/R_z$ + CNOT variant inspired by their family of ansätze; the exact form and the resulting parameter count are given in Section~\ref{sec:impl_quantum}.
+
+\textbf{Pooling layers} reduce the qubit count by half. A controlled rotation is applied to each pair, then one qubit is traced out (measured and discarded). This progressive halving gives the QCNN its $\mathcal{O}(\log n)$ depth.
+
+\textbf{Fully connected layer.} After repeated stages, a final $R_z R_y R_z$ rotation is applied to the remaining qubit before measuring $\langle Z \rangle$. The full circuit diagram of the 8-qubit QCNN used in this work is given in Figure~\ref{fig:qcnn_circuit} of Appendix~\ref{app:circuits}.
+% =========
+
+\subsection{Advantages for NISQ Devices}
+
+The QCNN has two properties that make it particularly suitable for near-term quantum hardware. First, its $\mathcal{O}(\log n)$ depth makes it inherently shallow: for 8~qubits, only 3~stages are needed. Second, Hur et al.~\cite{hur2022quantum} demonstrated that the hierarchical pooling structure avoids the \emph{barren plateau} problem~\cite{mcclean2018barren}, a phenomenon where gradients of the cost function vanish exponentially with circuit size in generic variational circuits, making training practically impossible. The QCNN's local structure and progressive qubit reduction maintain trainable gradients even as the system grows.
+
+\subsection{Data Encoding for QCNN}
+
+Since the QCNN requires one qubit per input feature, the input dimension must match the qubit count. For datasets with more features than qubits, dimensionality reduction is applied beforehand. Hur et al.~\cite{hur2022quantum} tested several encoding strategies, including angle encoding ($R_y$ rotations), dense encoding ($R_y R_z$ per qubit), and hybrid approaches. In this work, I use angle encoding for its simplicity and direct compatibility with the 8-qubit circuit.
+
+\subsection{Cost Function}
+\label{subsec:qcnn_cost}
+
+The circuit output $f(\mathbf{x}; \boldsymbol{\theta}) = \langle Z \rangle \in [-1, +1]$ is trained with MSE loss:
+\begin{equation}
+    C_{\text{MSE}} = \frac{1}{N}\sum_{i=1}^{N} \big(y_i - f(\mathbf{x}_i; \boldsymbol{\theta})\big)^2,
+    \label{eq:mse}
+\end{equation}
+where $y_i \in \{-1, +1\}$ is the binary target. Hur et al.~\cite{hur2022quantum} also explored cross-entropy, which maps $\langle Z \rangle$ to a probability via $p_i = \tfrac{1}{2}(1 + \langle Z \rangle)$ and performs slightly better; I use MSE for simplicity.
+
+% ============================================================
+
+\section{Hybrid Training Pipeline}
+\label{sec:training}
+
+Both architectures follow the standard \emph{hybrid quantum-classical} training loop~\cite{cerezo2021variational}: the quantum circuit evaluates $f(\mathbf{x}_i;\boldsymbol{\theta})$ for each sample, gradients are computed on the classical side via the parameter-shift rule (Equation~\ref{eq:param_shift}), and parameters are updated with Adam~\cite{kingma2015adam}. The quantum device handles only circuit evaluation; all optimization runs classically, making the approach feasible on NISQ hardware.
+% ============================================================
+\section{Classical Baselines}
+\label{sec:baselines}
+
+To assess whether quantum models offer any practical advantage, I compare them against an SVM (RBF kernel), a Random Forest, and two small neural networks whose parameter counts are matched to those of the quantum circuits. This parameter-matched methodology follows Hur et al.~\cite{hur2022quantum}. Full implementation details and results are given in Chapters~\ref{chap:implementation} and~\ref{chap:results}.

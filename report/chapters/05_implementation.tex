@@ -1,0 +1,101 @@
+\chapter{Implementation}
+\label{chap:implementation}
+
+This chapter describes the implementation of all classifiers evaluated in this work. The full source code is publicly available~\cite{motamedifar2026repo} and organised in the \texttt{src/} directory, written in Python~3.11.
+
+% ============================================================
+\section{Software Environment}
+\label{sec:env}
+
+Three main libraries are used. \textbf{PennyLane}~\cite{pennylane} (v0.39) provides the QNode interface for circuit evaluation, the \texttt{lightning.qubit} noiseless simulator used in the main experiments, and the \texttt{AdamOptimizer}; gradients are computed with adjoint differentiation for speed. \textbf{scikit-learn}~\cite{sklearn} provides the classical classifiers and model-selection utilities. \textbf{pandas} and \textbf{NumPy} handle data loading and numerical operations. All experiments run on CPU under noiseless simulation; no real quantum hardware is used.
+
+% ============================================================
+\section{Classical Baselines}
+\label{sec:impl_classical}
+
+The classical baselines are implemented in \texttt{src/classical/classical\_baselines.py} and evaluated under both experimental settings defined in Section~\ref{sec:splits}.
+
+\subsection{Support Vector Machine}
+
+The SVM uses an RBF kernel. Hyperparameters $C \in \{0.1,\,1,\,10,\,100\}$ and $\gamma \in \{\texttt{scale},\,\texttt{auto},\,0.01,\,0.1\}$ are selected by 5-fold cross-validation on the training set. The best configuration is $C = 100$, $\gamma = \texttt{scale}$, achieving a cross-validation accuracy of 97.8\%.
+
+\subsection{Random Forest}
+
+A Random Forest of 100 decision trees is trained with default scikit-learn settings. As an ensemble method, it provides a robust baseline for tabular data and additionally yields feature importance scores that complement the ANOVA-based selection in the preprocessing stage.
+
+\subsection{Neural Networks}
+
+Two fully connected networks with ReLU activations are trained using Adam ($\eta = 10^{-3}$, up to 200 epochs):
+\begin{itemize}[nosep]
+    \item \textbf{NN-Small} ($8 \to 12 \to 6 \to 3$, ${\sim}207$ parameters): a small network in the same order of magnitude as the quantum classifiers.
+    \item \textbf{NN-Medium} ($8 \to 16 \to 8 \to 3$, ${\sim}307$ parameters): a slightly larger network to test whether additional classical capacity helps.
+\end{itemize}
+
+\subsection{Autoencoder (Unsupervised Anomaly Detector)}
+\label{sec:impl_autoencoder}
+
+Supervised classifiers learn the boundary between the classes they are shown during training, which is precisely why they fail on unseen attack types. As a fairer classical baseline for the zero-day setting I add a shallow \emph{autoencoder} trained on normal traffic only. The architecture is a symmetric $8 \to 6 \to 3 \to 6 \to 8$ MLP with $\tanh$ activations and Xavier initialization, optimized with Adam ($\eta = 2 \times 10^{-3}$, weight decay $10^{-5}$, cosine learning-rate schedule) over 100~epochs on the ${\sim}28{,}000$ normal training samples. At inference, an input is flagged as anomalous if its reconstruction MSE exceeds the 95\textsuperscript{th} percentile of the training reconstruction errors. The threshold is set to the 95\textsuperscript{th} percentile of the training-normal reconstruction errors; the held-out normal split is used only to estimate the resulting false-positive rate, which is approximately 5\%. This protocol turns ``zero-day detection'' into ``anything that does not look like normal traffic,'' and is the standard unsupervised approach to network intrusion detection.
+
+Table~\ref{tab:model_params} gives an overview of all models and their parameter budgets.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{llc}
+    \toprule
+    \textbf{Model} & \textbf{Type} & \textbf{Parameters} \\
+    \midrule
+    SVM (RBF, $C{=}100$)          & Classical & kernel-based \\
+    Random Forest (100 trees)      & Classical & tree-based   \\
+    NN-Small $(12,6)$              & Classical & $\sim$207    \\
+    NN-Medium $(16,8)$             & Classical & $\sim$307    \\
+    Autoencoder $(8\!-\!6\!-\!3\!-\!6\!-\!8)$ & Classical & $\sim$160    \\
+    \midrule
+    Data Re-uploading (1 qubit, 6 layers)  & Quantum & 108 \\
+    Data Re-uploading (4 qubits, 3 layers) & Quantum & 216 \\
+    QCNN (8 qubits, 3 stages)             & Quantum & 81  \\
+    \bottomrule
+\end{tabular}
+\caption{Parameter counts for all evaluated models. Quantum counts are the total for the 3-class one-vs-all system ($3\times$ the per-classifier count).}
+\label{tab:model_params}
+\end{table}
+
+% ============================================================
+\section{Quantum Classifiers}
+\label{sec:impl_quantum}
+
+Both quantum classifiers are implemented in \texttt{src/quantum/} using PennyLane's \texttt{lightning.qubit} simulator with adjoint differentiation, which gives identical results to \texttt{default.qubit} but runs noticeably faster. They share the same one-vs-all strategy: for $K = 3$ classes, three independent binary circuits are trained, each targeting one class with labels $y_i \in \{-1, +1\}$. At inference, the class whose circuit returns the highest $\langle Z \rangle$ is predicted.
+
+\subsection{QCNN}
+
+The QCNN operates on 8~qubits with 3~conv-pool stages ($8 \to 4 \to 2 \to 1$), followed by an $R_z R_y R_z$ fully connected layer on the remaining qubit. The convolutional unitary is a 6-parameter two-qubit block inspired by the ansatz family of Hur et al.~\cite{hur2022quantum}:
+\[
+U(\boldsymbol{\theta}) = \big[R_y R_z\big]_{q_1} \;\text{CNOT}\; \big[R_y R_z\big]_{q_0} \big[R_y R_z\big]_{q_1},
+\]
+a lighter variant of Hur et al.'s 10-parameter $U_6$ (which uses $R_x/R_z$ rotations and CRX entanglement). Each pooling layer uses a CRZ--CRY pair (2~parameters) to conditionally transfer information before discarding one qubit, a simplification of the CRZ + controlled-$R_x$ pooling proposed in the original paper. The total per-classifier parameter count is $3 \times 6 + 3 \times 2 + 3 = 27$, and $81$~parameters for the full 3-class system.
+
+Input data is encoded via angle encoding: each of the 8~features is mapped to an $R_y$ rotation on the corresponding qubit.
+
+\subsection{Data Re-uploading}
+
+Two variants are implemented:
+\begin{itemize}[nosep]
+    \item \textbf{Single-qubit}: 6~layers on 1~qubit, $6 \times 6 = 36$~parameters per classifier (108~total).
+    \item \textbf{Multi-qubit}: 3~layers on 4~qubits with nearest-neighbor CZ entanglement, $6 \times 4 \times 3 = 72$~parameters per classifier (216~total).
+\end{itemize}
+
+In each layer, rotation angles are computed as $\theta_j^{(l)} + w_j^{(l)} x_{f(j,l)}$, where the feature index $f(j,l)$ cycles through the input features across layers. For the multi-qubit variant, the output is the average $\langle Z \rangle$ over all qubits, expressed as a single Hamiltonian measurement $\langle H \rangle$ with $H = \frac{1}{n}\sum_q Z_q$.
+
+\subsection{Training Configuration}
+
+All quantum classifiers are trained with the Adam optimizer (learning rate $\eta = 0.01$) for 100~epochs. Each one-vs-all binary classifier uses a \emph{separate} optimizer instance to avoid momentum interference between sub-models. Gradients are computed via adjoint differentiation, which is mathematically equivalent to the parameter-shift rule but considerably faster in simulation. Parameters are initialized uniformly in $[-0.1, 0.1]$ with a controlled random seed to ensure reproducibility and to mitigate barren plateaus~\cite{mcclean2018barren}. To account for the known sensitivity of quantum circuits to initialization, the main experiments are repeated with 10~different seeds and results are reported as mean~$\pm$~standard deviation (Section~\ref{sec:res_sensitivity}). For the standard 3-class task, training uses a stratified subsample of 500~samples and test evaluation uses 200~stratified samples; for zero-day evaluation, the same sizes are drawn as fixed (non-stratified) random subsamples of the normal+DoS train set and the injection-only test set. All circuits run on noiseless simulation.
+
+% ============================================================
+\section{Evaluation Protocol}
+\label{sec:eval_protocol}
+
+All models are evaluated under the two settings defined in Section~\ref{sec:splits}:
+\begin{itemize}[nosep]
+    \item \textbf{Standard}: 3-class accuracy and weighted F1-score on the 200-sample test set.
+    \item \textbf{Zero-day}: binary detection rate on the injection-only test set (7,034~samples after the 80/20 split), where the model has only seen normal and DoS traffic during training. Quantum models are evaluated on a fixed 200-sample subsample of this set due to simulation cost.
+\end{itemize}
+Results are reported in Chapter~\ref{chap:results}.
