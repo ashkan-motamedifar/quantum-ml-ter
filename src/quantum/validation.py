@@ -1,16 +1,3 @@
-"""
-Validation Experiment — Synthetic Dataset
-Validates our quantum classifier implementation by reproducing
-known results on standard benchmarks from the literature.
-
-Pérez-Salinas et al. (2020) report 90–98% accuracy on synthetic
-2D datasets with the single-qubit data re-uploading classifier.
-We test on sklearn's make_circles and make_moons.
-
-Usage:
-    python -m src.quantum.validation
-"""
-
 import pennylane as qml
 from pennylane import numpy as np
 from sklearn.datasets import make_circles, make_moons
@@ -27,8 +14,6 @@ ROOT = Path(__file__).resolve().parents[2]
 LOGS = ROOT / 'results' / 'logs'
 LOGS.mkdir(parents=True, exist_ok=True)
 
-
-# ── Minimal single-qubit re-uploading (2 features, binary) ──────────────────
 
 def make_circuit(n_features, n_layers):
     dev = qml.device('default.qubit', wires=1)
@@ -54,14 +39,13 @@ def make_circuit(n_features, n_layers):
 
 def train_and_evaluate(X_train, y_train, X_test, y_test, n_layers, n_epochs,
                        dataset_name):
-    """Train a single binary re-uploading classifier and evaluate."""
     n_features = X_train.shape[1]
     circuit = make_circuit(n_features, n_layers)
-    np.random.seed(42)  # deterministic param init for the validation experiment
+    np.random.seed(42)
     params = np.random.uniform(-0.1, 0.1, (n_layers, 6))
     opt = qml.AdamOptimizer(stepsize=0.05)
 
-    # Binary labels: class 0 → -1, class 1 → +1
+    # binary labels: class 0 → -1, class 1 → +1 (match ⟨Z⟩ output range)
     y_tr_binary = np.where(y_train == 1, 1.0, -1.0)
 
     print(f"\n{'=' * 55}")
@@ -78,14 +62,12 @@ def train_and_evaluate(X_train, y_train, X_test, y_test, n_layers, n_epochs,
     for epoch in range(n_epochs):
         params, loss = opt.step_and_cost(cost_fn, params)
         if epoch % 20 == 0 or epoch == n_epochs - 1:
-            # Evaluate on test set
             raw = np.array([float(circuit(x, params)) for x in X_test])
             y_pred = (raw > 0).astype(int)
             acc = accuracy_score(y_test, y_pred)
             print(f"  Epoch {epoch:3d} | Loss: {loss:.4f} | "
                   f"Test Acc: {acc:.4f}")
 
-    # Final evaluation
     raw = np.array([float(circuit(x, params)) for x in X_test])
     y_pred = (raw > 0).astype(int)
 
@@ -114,7 +96,6 @@ if __name__ == '__main__':
     results = []
     scaler = MinMaxScaler(feature_range=(0, np.pi))
 
-    # --- make_circles ---
     X, y = make_circles(n_samples=400, noise=0.1, factor=0.3, random_state=42)
     X = scaler.fit_transform(X)
     X_tr, X_te, y_tr, y_te = train_test_split(
@@ -125,7 +106,6 @@ if __name__ == '__main__':
                            dataset_name="make_circles")
     results.append(r)
 
-    # --- make_moons ---
     X, y = make_moons(n_samples=400, noise=0.1, random_state=42)
     X = scaler.fit_transform(X)
     X_tr, X_te, y_tr, y_te = train_test_split(
@@ -136,13 +116,11 @@ if __name__ == '__main__':
                            dataset_name="make_moons")
     results.append(r)
 
-    # Save
     out = LOGS / 'validation_results.json'
     with open(out, 'w') as f:
         json.dump(results, f, indent=2)
     print(f"\nResults saved → {out}")
 
-    # Summary
     print("\n" + "=" * 55)
     print("  VALIDATION SUMMARY")
     print("=" * 55)
@@ -150,4 +128,3 @@ if __name__ == '__main__':
         print(f"  {r['dataset']:15s} | Acc: {r['accuracy']:.3f} | "
               f"F1: {r['f1']:.3f} | MCC: {r['mcc']:.3f}")
     print("\n  Pérez-Salinas et al. (2020) report 90–98% on similar tasks.")
-    print("  If our results are in that range, the implementation is validated.")

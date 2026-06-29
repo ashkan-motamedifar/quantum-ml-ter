@@ -1,18 +1,3 @@
-"""
-Classical Baselines for Quantum ML Comparison
-TER: Quantum Computing for Machine Learning — IoT Intrusion Detection
-
-Models:
-    - SVM (RBF kernel, grid-searched)
-    - Random Forest
-    - Neural Network Small  (~207 params)
-    - Neural Network Medium (~307 params)
-
-Two evaluation modes:
-    - Standard   : 3-class (normal / dos / injection)
-    - Zero-day   : train on normal+dos, test on unseen injection
-"""
-
 import numpy as np
 import pandas as pd
 import json
@@ -27,7 +12,6 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import LabelEncoder
 
-# ── Paths ────────────────────────────────────────────────────────────────────
 ROOT    = Path(__file__).resolve().parents[2]
 DATA    = ROOT / 'data'
 RESULTS = ROOT / 'results'
@@ -35,10 +19,7 @@ LOGS    = RESULTS / 'logs'
 LOGS.mkdir(parents=True, exist_ok=True)
 
 
-# ── Data loading ─────────────────────────────────────────────────────────────
-
 def load_standard():
-    """Load standard 3-class train/test split (quantum subsample)."""
     X_train = pd.read_csv(DATA / 'X_train_quantum.csv').values
     y_train = pd.read_csv(DATA / 'y_train_quantum.csv').values.ravel()
     X_test  = pd.read_csv(DATA / 'X_test_quantum.csv').values
@@ -54,11 +35,6 @@ def load_standard():
 
 
 def load_zeroday():
-    """
-    Load zero-day split.
-    Train: normal + dos (binary labels)
-    Test : injection only (all labeled as attack=1, unseen during training)
-    """
     X_train = pd.read_csv(DATA / 'X_train_zeroday.csv').values
     y_train = pd.read_csv(DATA / 'y_train_zeroday.csv').values.ravel()
     X_test  = pd.read_csv(DATA / 'X_test_zeroday.csv').values
@@ -70,10 +46,7 @@ def load_zeroday():
     return X_train, y_train, X_test, y_test
 
 
-# ── Models ───────────────────────────────────────────────────────────────────
-
 def train_svm(X_train, y_train, X_test, y_test, name="SVM"):
-    """SVM with RBF kernel, hyperparameters tuned by 5-fold cross-validation."""
     print(f"=== {name} (RBF Kernel) ===")
 
     param_grid = {
@@ -94,7 +67,6 @@ def train_svm(X_train, y_train, X_test, y_test, name="SVM"):
 
 
 def train_random_forest(X_train, y_train, X_test, y_test, name="Random Forest"):
-    """Random Forest — strong classical baseline, important for comparison."""
     print(f"=== {name} ===")
 
     rf = RandomForestClassifier(
@@ -108,7 +80,6 @@ def train_random_forest(X_train, y_train, X_test, y_test, name="Random Forest"):
 
 
 def train_nn(X_train, y_train, X_test, y_test, hidden_layers, name="NN"):
-    """Classical MLP — architectures chosen to match quantum parameter counts."""
     n_classes = len(np.unique(y_train))
     layers    = [X_train.shape[1]] + list(hidden_layers) + [n_classes]
     n_params  = sum(layers[i] * layers[i+1] + layers[i+1] for i in range(len(layers)-1))
@@ -131,8 +102,6 @@ def train_nn(X_train, y_train, X_test, y_test, hidden_layers, name="NN"):
     y_pred = nn.predict(X_test)
     return _report(y_test, y_pred, name), nn
 
-
-# ── Evaluation helper ─────────────────────────────────────────────────────────
 
 def _report(y_true, y_pred, name):
     acc = accuracy_score(y_true, y_pred)
@@ -167,10 +136,7 @@ def _report(y_true, y_pred, name):
     }
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
-
 def run_standard():
-    """Run all models on the standard 3-class split."""
     print("\n" + "=" * 60)
     print("  STANDARD EVALUATION  (3-class: normal / dos / injection)")
     print("=" * 60 + "\n")
@@ -202,11 +168,6 @@ def run_standard():
 
 
 def run_zeroday():
-    """
-    Run all models on the zero-day split.
-    Train on normal+dos, evaluate on injection (unseen class).
-    This simulates real-world zero-day detection.
-    """
     print("\n" + "=" * 60)
     print("  ZERO-DAY EVALUATION  (train: normal+dos | test: injection)")
     print("=" * 60 + "\n")
@@ -260,7 +221,6 @@ if __name__ == '__main__':
     zd_res  = run_zeroday()
     print_summary(std_res, zd_res)
 
-    # Save results for later comparison with quantum models
     all_results = {'standard': std_res, 'zeroday': zd_res}
     out_path = LOGS / 'classical_results.json'
     with open(out_path, 'w') as f:

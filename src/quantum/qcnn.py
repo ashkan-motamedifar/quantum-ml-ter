@@ -1,15 +1,3 @@
-"""
-Quantum Convolutional Neural Network (QCNN)
-Based on: Hur et al. (2022)
-Implementation: PennyLane
-
-Architecture: 8 qubits → 3 conv-pool stages → 1 qubit → ⟨Z⟩
-Parameters: 27 per binary classifier, 81 total (one-vs-all, 3 classes)
-
-Usage:
-    python -m src.quantum.qcnn
-"""
-
 import argparse
 import pennylane as qml
 from pennylane import numpy as np
@@ -28,10 +16,7 @@ LOGS    = ROOT / 'results' / 'logs'
 LOGS.mkdir(parents=True, exist_ok=True)
 
 
-# ── Circuit building blocks ──────────────────────────────────────────────────
-
 def _two_qubit_gate(params, wires):
-    """6-parameter Hur-inspired block: RY/RZ on both qubits, CNOT, then RY/RZ on target."""
     qml.RY(params[0], wires=wires[0])
     qml.RZ(params[1], wires=wires[0])
     qml.RY(params[2], wires=wires[1])
@@ -42,7 +27,6 @@ def _two_qubit_gate(params, wires):
 
 
 def conv_layer(params, wires):
-    """Convolutional layer: same 2-qubit gate on all adjacent pairs."""
     n = len(wires)
     for i in range(0, n - 1, 2):
         _two_qubit_gate(params, wires=[wires[i], wires[i + 1]])
@@ -51,7 +35,6 @@ def conv_layer(params, wires):
 
 
 def pool_layer(params, wires):
-    """Pooling layer: CRZ + CRY on pairs, keep second qubit."""
     remaining = []
     for i in range(0, len(wires) - 1, 2):
         qml.CRZ(params[0], wires=[wires[i], wires[i + 1]])
@@ -60,35 +43,25 @@ def pool_layer(params, wires):
     return remaining
 
 
-# ── Full QCNN circuit ────────────────────────────────────────────────────────
-
+# Hur et al. (2022) ansatz: 3 conv-pool stages + FC, 27 params total
 def make_qcnn_circuit(n_qubits=8):
-    """
-    8-qubit QCNN: 3 conv-pool stages + FC layer.
-    Total: 3×6 (conv) + 3×2 (pool) + 3 (FC) = 27 parameters.
-    """
     dev = qml.device('lightning.qubit', wires=n_qubits)
 
     @qml.qnode(dev, interface='autograd', diff_method='adjoint')
     def circuit(x, params):
-        # Angle encoding
         for i in range(n_qubits):
             qml.RY(x[i], wires=i)
 
-        # Stage 1: 8 → 4
         active = list(range(n_qubits))
         conv_layer(params[0:6], active)
         active = pool_layer(params[6:8], active)
 
-        # Stage 2: 4 → 2
         conv_layer(params[8:14], active)
         active = pool_layer(params[14:16], active)
 
-        # Stage 3: 2 → 1
         conv_layer(params[16:22], active)
         active = pool_layer(params[22:24], active)
 
-        # FC on remaining qubit
         qml.RZ(params[24], wires=active[0])
         qml.RY(params[25], wires=active[0])
         qml.RZ(params[26], wires=active[0])
@@ -98,11 +71,7 @@ def make_qcnn_circuit(n_qubits=8):
     return circuit, 27
 
 
-# ── One-vs-All Classifier ────────────────────────────────────────────────────
-
 class QCNNClassifier:
-    """3-class QCNN using one-vs-all strategy."""
-
     def __init__(self, n_qubits=8, lr=0.01):
         self.n_qubits = n_qubits
         self.lr = lr
@@ -117,7 +86,7 @@ class QCNNClassifier:
         rng = std_np.random.RandomState(seed)
         for _ in classes:
             circuit, n_params = make_qcnn_circuit(self.n_qubits)
-            # Small init to mitigate barren plateaus
+            # small init range to mitigate barren plateaus
             params = np.array(rng.uniform(-0.1, 0.1, (n_params,)), requires_grad=True)
             self.circuits.append(circuit)
             self.params_list.append(params)
@@ -136,7 +105,6 @@ class QCNNClassifier:
         for epoch in range(n_epochs):
             total_loss = 0
 
-            # Mini-batch: use a random subset per epoch for speed
             if batch_size and batch_size < len(X):
                 idx = rng.choice(len(X), size=batch_size, replace=False)
                 X_b, y_b = X[idx], y[idx]
@@ -146,7 +114,7 @@ class QCNNClassifier:
             for i, cls in enumerate(self.classes):
                 y_binary = np.where(y_b == cls, 1.0, -1.0)
 
-                # Fix lambda closure: capture i by default arg
+                # capture i via default arg to fix lambda closure
                 def cost_fn(p, _i=i):
                     return self._cost_fn(
                         p, self.circuits[_i], X_b, y_binary
@@ -181,19 +149,15 @@ class QCNNClassifier:
         return accuracy_score(y_str, self.predict(X))
 
 
-# ── Data loading ─────────────────────────────────────────────────────────────
-
 def load_standard(n_samples=500):
-    # Always use the same 200 test samples
     X_test  = pd.read_csv(DATA / 'X_test_quantum.csv').values
     y_test  = pd.read_csv(DATA / 'y_test_quantum.csv').values.ravel()
 
     if n_samples == 500:
-        # Use pre-saved subset (same as classical baselines)
+        # same pre-saved subset as classical baselines
         X_train = pd.read_csv(DATA / 'X_train_quantum.csv').values
         y_train = pd.read_csv(DATA / 'y_train_quantum.csv').values.ravel()
     else:
-        # Ablation: stratified subsample from full training set
         X_all = pd.read_csv(DATA / 'X_train.csv').values
         y_all = pd.read_csv(DATA / 'y_train.csv').values.ravel()
         from sklearn.model_selection import train_test_split
@@ -219,11 +183,9 @@ def load_zeroday(n_samples=500):
     return X_train, y_train, X_test, y_test
 
 
-# ── Evaluation ───────────────────────────────────────────────────────────────
-
 def _evaluate(model, X_test, y_test, name):
     y_pred = model.predict(X_test)
-    # Ensure both are plain string arrays for sklearn
+    # sklearn needs plain string arrays
     y_true = np.array([str(v) for v in y_test])
     y_pred = np.array([str(v) for v in y_pred])
     acc = accuracy_score(y_true, y_pred)
@@ -255,22 +217,17 @@ def _evaluate(model, X_test, y_test, name):
     }
 
 
-# ── Main ─────────────────────────────────────────────────────────────────────
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n_samples', type=int, default=500,
-                        help='Number of training samples (default: 500)')
-    parser.add_argument('--seed', type=int, default=42,
-                        help='Random seed for parameter init (default: 42)')
+    parser.add_argument('--n_samples', type=int, default=500)
+    parser.add_argument('--seed', type=int, default=42)
     args = parser.parse_args()
     N = args.n_samples
     S = args.seed
-    BS = 100 if N > 500 else None  # mini-batch for large datasets
+    BS = 100 if N > 500 else None
 
     results = {}
 
-    # Standard 3-class
     print("=" * 60)
     print(f"  QCNN — STANDARD  (n_samples={N}, seed={S}, batch={BS})")
     print("=" * 60)
@@ -281,7 +238,6 @@ if __name__ == '__main__':
     results['standard'] = _evaluate(model, X_te, y_te, "QCNN (standard)")
     results['standard']['history'] = history
 
-    # Zero-day
     print("\n" + "=" * 60)
     print(f"  QCNN — ZERO-DAY  (n_samples={N}, seed={S}, batch={BS})")
     print("=" * 60)
@@ -292,7 +248,6 @@ if __name__ == '__main__':
     results['zeroday'] = _evaluate(model_zd, X_te_zd, y_te_zd, "QCNN (zero-day)")
     results['zeroday']['history'] = history_zd
 
-    # Save with sample size and seed in filename
     out = LOGS / f'qcnn_{N}s_seed{S}.json'
     with open(out, 'w') as f:
         json.dump(results, f, indent=2)

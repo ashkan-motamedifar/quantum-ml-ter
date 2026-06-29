@@ -1,16 +1,3 @@
-"""
-Data Re-uploading Quantum Classifier
-Based on: Pérez-Salinas et al. (2020)
-Implementation: PennyLane
-
-Two variants:
-    - Single-qubit (1 qubit, 6 layers, 36 params/classifier)
-    - Multi-qubit  (4 qubits, 3 layers, 72 params/classifier)
-
-Usage:
-    python -m src.quantum.data_reuploading
-"""
-
 import argparse
 import pennylane as qml
 from pennylane import numpy as np
@@ -29,10 +16,8 @@ LOGS    = ROOT / 'results' / 'logs'
 LOGS.mkdir(parents=True, exist_ok=True)
 
 
-# ── Single-qubit circuit ─────────────────────────────────────────────────────
-
+# Pérez-Salinas et al. (2020): single-qubit re-uploading, 6 params/layer
 def make_reuploading_circuit(n_features, n_layers):
-    """Single-qubit data re-uploading. 6 params per layer."""
     dev = qml.device('lightning.qubit', wires=1)
     n_params = 6 * n_layers
 
@@ -55,10 +40,8 @@ def make_reuploading_circuit(n_features, n_layers):
     return circuit, n_params
 
 
-# ── Multi-qubit circuit ──────────────────────────────────────────────────────
-
+# multi-qubit variant with nearest-neighbor CZ entanglement
 def make_multiqubit_reuploading_circuit(n_features, n_qubits, n_layers):
-    """Multi-qubit re-uploading with CZ entanglement. Measures ALL qubits."""
     dev = qml.device('lightning.qubit', wires=n_qubits)
     n_params = 6 * n_qubits * n_layers
 
@@ -77,11 +60,10 @@ def make_multiqubit_reuploading_circuit(n_features, n_qubits, n_layers):
                 qml.RY(biases[1] + weights[1] * f2, wires=q)
                 qml.RZ(biases[2] + weights[2] * f3, wires=q)
 
-            # CZ entanglement (nearest-neighbor)
             for q in range(n_qubits - 1):
                 qml.CZ(wires=[q, q + 1])
 
-        # Average ⟨Z⟩ over all qubits (build Hamiltonian, then measure once)
+        # mean ⟨Z⟩ via single Hamiltonian measurement
         coeffs = [1.0 / n_qubits] * n_qubits
         obs    = [qml.PauliZ(q) for q in range(n_qubits)]
         H      = qml.Hamiltonian(coeffs, obs)
@@ -90,11 +72,7 @@ def make_multiqubit_reuploading_circuit(n_features, n_qubits, n_layers):
     return circuit, n_params
 
 
-# ── One-vs-All Classifier ────────────────────────────────────────────────────
-
 class ReuploadingClassifier:
-    """3-class classifier using one-vs-all re-uploading circuits."""
-
     def __init__(self, n_features=8, n_layers=6, n_qubits=1, lr=0.01):
         self.n_features = n_features
         self.n_layers = n_layers
@@ -145,7 +123,6 @@ class ReuploadingClassifier:
         for epoch in range(n_epochs):
             total_loss = 0
 
-            # Mini-batch: use a random subset per epoch for speed
             if batch_size and batch_size < len(X):
                 idx = rng.choice(len(X), size=batch_size, replace=False)
                 X_b, y_b = X[idx], y[idx]
@@ -155,7 +132,7 @@ class ReuploadingClassifier:
             for i, cls in enumerate(self.classes):
                 y_binary = np.where(y_b == cls, 1.0, -1.0)
 
-                # Fix lambda closure
+                # capture i via default arg to fix lambda closure
                 def cost_fn(p, _i=i):
                     return self._cost_fn(
                         p, self.circuits[_i], X_b, y_binary
@@ -190,19 +167,15 @@ class ReuploadingClassifier:
         return accuracy_score(y_str, self.predict(X))
 
 
-# ── Data loading ─────────────────────────────────────────────────────────────
-
 def load_standard(n_samples=500):
-    # Always use the same 200 test samples
     X_test  = pd.read_csv(DATA / 'X_test_quantum.csv').values
     y_test  = pd.read_csv(DATA / 'y_test_quantum.csv').values.ravel()
 
     if n_samples == 500:
-        # Use pre-saved subset (same as classical baselines)
+        # same pre-saved subset as classical baselines
         X_train = pd.read_csv(DATA / 'X_train_quantum.csv').values
         y_train = pd.read_csv(DATA / 'y_train_quantum.csv').values.ravel()
     else:
-        # Ablation: stratified subsample from full training set
         X_all = pd.read_csv(DATA / 'X_train.csv').values
         y_all = pd.read_csv(DATA / 'y_train.csv').values.ravel()
         from sklearn.model_selection import train_test_split
@@ -230,7 +203,7 @@ def load_zeroday(n_samples=500):
 
 def _evaluate(model, X_test, y_test, name):
     y_pred = model.predict(X_test)
-    # Ensure both are plain string arrays for sklearn
+    # sklearn needs plain string arrays
     y_true = np.array([str(v) for v in y_test])
     y_pred = np.array([str(v) for v in y_pred])
     acc = accuracy_score(y_true, y_pred)
@@ -262,25 +235,20 @@ def _evaluate(model, X_test, y_test, name):
     }
 
 
-# ── Main ─────────────────────────────────────────────────────────────────────
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n_samples', type=int, default=500,
-                        help='Number of training samples (default: 500)')
-    parser.add_argument('--seed', type=int, default=42,
-                        help='Random seed for parameter init (default: 42)')
+    parser.add_argument('--n_samples', type=int, default=500)
+    parser.add_argument('--seed', type=int, default=42)
     args = parser.parse_args()
     N = args.n_samples
     S = args.seed
-    BS = 100 if N > 500 else None  # mini-batch for large datasets
+    BS = 100 if N > 500 else None
 
     results = {}
 
     X_tr, y_tr, X_te, y_te = load_standard(n_samples=N)
     n_feat = X_tr.shape[1]
 
-    # --- Single-qubit (6 layers) ---
     print("=" * 60)
     print(f"  SINGLE-QUBIT RE-UPLOADING — STANDARD  (n_samples={N}, seed={S}, batch={BS})")
     print("=" * 60)
@@ -291,7 +259,6 @@ if __name__ == '__main__':
     results['single_qubit_standard'] = _evaluate(model_1q, X_te, y_te, "Re-uploading 1q (standard)")
     results['single_qubit_standard']['history'] = h1
 
-    # --- Multi-qubit (4 qubits, 3 layers) ---
     print("\n" + "=" * 60)
     print(f"  4-QUBIT RE-UPLOADING — STANDARD  (n_samples={N}, seed={S}, batch={BS})")
     print("=" * 60)
@@ -302,7 +269,6 @@ if __name__ == '__main__':
     results['multi_qubit_standard'] = _evaluate(model_4q, X_te, y_te, "Re-uploading 4q (standard)")
     results['multi_qubit_standard']['history'] = h4
 
-    # --- Zero-day ---
     X_tr_zd, y_tr_zd, X_te_zd, y_te_zd = load_zeroday(n_samples=N)
 
     print("\n" + "=" * 60)
@@ -325,7 +291,6 @@ if __name__ == '__main__':
     results['multi_qubit_zeroday'] = _evaluate(model_4q_zd, X_te_zd, y_te_zd, "Re-uploading 4q (zero-day)")
     results['multi_qubit_zeroday']['history'] = h4z
 
-    # Save with sample size and seed in filename
     out = LOGS / f'reuploading_{N}s_seed{S}.json'
     with open(out, 'w') as f:
         json.dump(results, f, indent=2)
