@@ -2,7 +2,7 @@
 
 A QCNN reached 69% accuracy on a zero-day attack class (train: normal+DoS, test: unseen injection), where every supervised classical baseline — SVM, random forest, MLPs — stayed below 3%. An unsupervised autoencoder matched the QCNN at 70%. Averaged across 10 seeds, on ToN_IoT `Network_dataset_11`. Master 1 TER at ICube / Université de Strasbourg, supervised by Fabrice Théoleyre.
 
-Report: [report/main.pdf](report/main.pdf) · Defense slides: [MOTAMEDIFAR_ASHKAN.pdf](MOTAMEDIFAR_ASHKAN.pdf) · References: [Hur et al. 2022](https://arxiv.org/abs/2108.00661) (QCNN), [Pérez-Salinas et al. 2020](https://arxiv.org/abs/1907.02085) (re-uploading) · Dataset: [ToN_IoT](https://research.unsw.edu.au/projects/toniot-datasets)
+Preprint: [report/arxiv.pdf](report/arxiv.pdf) (submitting to arXiv:cs.LG) · Thesis: [report/main.pdf](report/main.pdf) · Defense slides: [MOTAMEDIFAR_ASHKAN.pdf](MOTAMEDIFAR_ASHKAN.pdf) · References: [Hur et al. 2022](https://arxiv.org/abs/2108.00661) (QCNN), [Pérez-Salinas et al. 2020](https://arxiv.org/abs/1907.02085) (re-uploading) · Dataset: [ToN_IoT](https://research.unsw.edu.au/projects/toniot-datasets)
 
 ## Run
 

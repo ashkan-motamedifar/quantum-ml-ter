@@ -1,0 +1,189 @@
+% ============================================================
+% arXiv version of the TER manuscript
+% Same content as main.tex; article class, no cover page, no TOC.
+% ============================================================
+\documentclass[11pt,a4paper]{article}
+
+% ---- Language and encoding ----
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% ---- Fonts ----
+\usepackage{mathpazo}
+\usepackage[scaled]{helvet}
+\usepackage{courier}
+
+% ---- Colors ----
+\usepackage{xcolor}
+\definecolor{citegreen}{RGB}{0, 166, 79}
+\definecolor{linkred}{RGB}{204, 51, 51}
+\definecolor{urlcyan}{RGB}{0, 154, 180}
+
+% ---- Math ----
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{braket}
+
+% ---- Tables ----
+\usepackage{tabularx}
+\usepackage{booktabs}
+
+% ---- Figures ----
+\usepackage{graphicx}
+\setkeys{Gin}{keepaspectratio}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+
+% ---- Lists ----
+\usepackage{enumitem}
+
+% ---- TikZ ----
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing, arrows, positioning}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+% ---- Layout: arXiv-standard 1-inch margins ----
+\usepackage[margin=1in]{geometry}
+\parskip=1.5mm
+\parindent=0mm
+
+% ---- Bibliography ----
+\usepackage[numbers,sort&compress]{natbib}
+
+% ---- Hyperlinks: arXiv-style boxes ----
+\usepackage{hyperref}
+\urlstyle{sf}
+\hypersetup{
+    colorlinks=false,
+    citebordercolor=citegreen,
+    linkbordercolor=linkred,
+    urlbordercolor=urlcyan,
+    pdfborderstyle={/S/U/W 1},
+    pdftitle={Quantum Machine Learning for Zero-Day IoT Intrusion Detection},
+    pdfauthor={Ashkan Motamedifar},
+}
+
+% ============================================================
+% Map thesis heading levels to article heading levels.
+% \chapter → \section, \section → \subsection, \subsection → \subsubsection
+% This lets us reuse chapters/*.tex without rewriting them.
+% ============================================================
+\let\OldSection\section
+\let\OldSubsection\subsection
+\let\OldSubsubsection\subsubsection
+
+\newcommand{\chapter}[1]{\OldSection{#1}}
+\renewcommand{\section}[1]{\OldSubsection{#1}}
+\renewcommand{\subsection}[1]{\OldSubsubsection{#1}}
+
+% Silence \blankpage from main.tex (thesis-only helper)
+\newcommand{\blankpage}{}
+
+\title{Quantum Machine Learning for Zero-Day IoT Intrusion Detection\\
+\large A comparison of QCNN, data re-uploading, autoencoder, and classical baselines
+on the ToN\_IoT dataset}
+
+\author{Ashkan Motamedifar\thanks{\texttt{ashkanmotamedifar@gmail.com}}\\
+Laboratoire ICube, UMR 7357 --- CNRS\\
+Universit\'{e} de Strasbourg, France}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We compare quantum machine learning classifiers with classical baselines
+for IoT network intrusion detection on the ToN\_IoT dataset, focusing on
+\emph{zero-day} attack detection where models are tested on an attack class
+never seen during training. Two quantum architectures are implemented
+in PennyLane: a Quantum Convolutional Neural Network (QCNN, Hur et al.\
+2022) on 8~qubits, and single-qubit and 4-qubit data re-uploading circuits
+(P\'erez-Salinas et al.\ 2020). Classical baselines include SVM, Random
+Forest, two feed-forward networks, and an autoencoder anomaly detector.
+On the standard 3-class task (normal / DoS / injection), classical methods
+dominate: Random Forest reaches 99\% accuracy while quantum models plateau
+at 68--75\%. The picture inverts under zero-day evaluation: every supervised
+classical baseline collapses below 3\%, while the QCNN reaches 68.6\% $\pm$
+6.8\% on 7 of 10 seeds (3 hit barren plateaus), and an unsupervised autoencoder
+matches at 70.5\% $\pm$ 14.4\%. The QCNN achieves this with 56$\times$ less
+training data and lower variance when convergent, but pays a 30\% training-failure
+rate. All quantum and autoencoder numbers are averaged over 10 random seeds
+to expose initialization sensitivity. Results suggest that hierarchical
+quantum feature maps and classical reconstruction-based detectors are
+complementary routes to out-of-distribution generalization; the quantum
+route is not (yet) clearly preferable, but performs comparably in a
+regime where labelled normal traffic is scarce.
+\end{abstract}
+
+% ============================================================
+% Body: reuse the same chapter files
+% ============================================================
+
+\input{chapters/01_introduction}
+\input{chapters/02_quantum_foundations}
+\input{chapters/03_quantum_ml_architectures}
+\input{chapters/04_dataset_preprocessing}
+\input{chapters/05_implementation}
+\input{chapters/06_results}
+
+% ============================================================
+% Conclusion
+% ============================================================
+\OldSection{Conclusion}
+\label{sec:conclusion}\label{chap:conclusion}
+
+\OldSubsection*{Summary}
+
+This work compared quantum machine learning classifiers with classical methods for IoT network intrusion detection, focusing on zero-day attacks. I evaluated five classical models (SVM, Random Forest, two neural networks, and an autoencoder anomaly detector) and three quantum architectures (QCNN, single- and 4-qubit data re-uploading) on ToN\_IoT, using a one-vs-all strategy over three classes (normal, DoS, injection). All quantum and autoencoder results are averaged over 10~seeds.
+
+On the standard 3-class task, classical supervised models reached near-perfect accuracy (99\%) while quantum models plateaued at 68--75\% regardless of training budget. An ablation confirmed that \emph{circuit capacity}---not data---is the bottleneck: accuracy is nearly identical between 100 and 1000 training samples.
+
+On the zero-day task, the picture inverted. Every supervised classical model failed ($<$~3\%), as did both re-uploading variants (7--9\%). Two approaches reached $\sim$70\%: the autoencoder at 70.5\% $\pm$ 14.4\% (trained unsupervised on normal traffic only), and the QCNN at 68.6\% $\pm$ 6.8\% on the 7 seeds that converged (49.0\% $\pm$ 30.5\% across all 10, with 3 barren-plateau collapses). The QCNN is trained \emph{supervised} on normal-vs-DoS labels but transfers to injection, suggesting its feature map captures a broader notion of ``not normal'' rather than memorizing the DoS class. The QCNN does not strictly dominate, but reaches comparable accuracy with 56$\times$ less training data and lower variance when convergent, at the cost of a 30\% training-failure rate (vs.\ 10\% for the autoencoder).
+
+\OldSubsection*{Limitations}
+
+All quantum experiments use a noiseless simulator (\texttt{lightning.qubit}), so real NISQ noise and decoherence are absent. QCNN zero-day accuracy varied from 0\% to 76\% across the 10 seeds, with 3 barren-plateau collapses---a single-seed run would have been misleading. The quantum models train on 500 samples and test on 200, while the autoencoder uses all ${\sim}28{,}000$ normal samples and the full 7,034 injection test set; this 56$\times$ asymmetry favours the autoencoder, so the two means are not a strict head-to-head. Finally, training used Adam with adjoint differentiation (mathematically equivalent to parameter-shift), without the advanced techniques (warm restarts, layer-wise pre-training, smart initialization) proposed in the literature to mitigate barren plateaus.
+
+\OldSubsection*{Perspectives}
+
+Several directions extend this work:
+
+\begin{itemize}[nosep]
+    \item \textbf{More seeds.} 30--50 seeds would tighten the confidence interval on the failure rate and enable significance testing against the autoencoder.
+    \item \textbf{Barren-plateau mitigation.} Layer-wise pre-training, identity-block init, or warm-start strategies could reduce the 30\% failure rate---the single largest practical obstacle.
+    \item \textbf{Noise simulation.} Realistic noise models (depolarizing, readout) would test whether the zero-day advantage survives under hardware conditions.
+    \item \textbf{Larger circuits.} More qubits and depth could raise the capacity ceiling observed on the standard task.
+    \item \textbf{Alternative encodings.} Amplitude or kernel-based encodings~\cite{havlicek2019supervised} would test whether the generalization is specific to angle encoding.
+    \item \textbf{Real quantum hardware.} Execution on IBM Quantum or IonQ would ground-truth the simulator results.
+    \item \textbf{Broader attack diversity.} Extending zero-day to backdoor, ransomware, or scanning attacks would test the generality of the anomaly-detection capability.
+\end{itemize}
+
+Despite classical methods' clear dominance on standard classification, the zero-day result offers an encouraging signal: both the QCNN and a classical autoencoder detect ${\sim}70\%$ of unseen attacks where every supervised classical model fails below 3\%. The QCNN does so with 56$\times$ less training data and lower variance when convergent, but pays a 30\% barren-plateau failure rate the autoencoder does not. The honest take-away is not ``quantum wins,'' but that quantum hierarchical feature maps and classical reconstruction-based detectors are two complementary routes to the same kind of out-of-distribution generalization---and the quantum route is not (yet) clearly preferable. If barren plateaus can be mitigated and the effect confirmed on noisy hardware and broader attack taxonomies, the quantum approach may become attractive where labelled normal traffic is scarce.
+
+% ============================================================
+% Acknowledgments
+% ============================================================
+\OldSection*{Acknowledgments}
+
+I thank Fabrice Th\'{e}oleyre (ICube, CNRS / Universit\'{e} de Strasbourg) for supervising this research project and for detailed feedback on framing, methodology, and reporting. Code and reproduction scripts are available at
+\url{https://github.com/ashkan-motamedifar/quantum-ml-ter}.
+
+Parts of the text were refined with the assistance of a large language model for language formulation and proofreading. All scientific content---problem formulation, dataset preprocessing, model design, experiments, analyses, figures, and conclusions---is my own.
+
+% ============================================================
+% Appendix
+% ============================================================
+\appendix
+\input{chapters/07_appendix}
+
+% ============================================================
+% Bibliography
+% ============================================================
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+
+\end{document}
